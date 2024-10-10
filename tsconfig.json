@@ -1,0 +1,27 @@
+/* https://www.totaltypescript.com/tsconfig-cheat-sheet */
+{
+  "include": [
+    "src/**/*.ts"
+  ],
+  "compilerOptions": {
+    "esModuleInterop": true,
+    "skipLibCheck": true,
+    "target": "es2022",
+    "allowJs": true,
+    "resolveJsonModule": true,
+    "moduleDetection": "force",
+    "isolatedModules": true,
+    "strict": false,
+    "forceConsistentCasingInFileNames": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true,
+    "module": "esnext",
+    "moduleResolution": "node",
+    "outDir": "dist",
+    "sourceMap": true,
+    "declaration": true,
+    "removeComments": true,
+    "lib": ["esnext", "dom", "dom.iterable"],
+    "types": [ "node" ]
+  }
+}
