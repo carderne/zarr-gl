@@ -19,6 +19,7 @@
     "fmt": "prettier --write src/*.ts",
     "lint": "eslint src/*.ts",
     "check": "tsc --noEmit",
+    "dev": "webpack watch --mode development",
     "build": "webpack --mode production"
   },
   "repository": {
