@@ -16,7 +16,11 @@ import vertexSource from "./shaders/vert.glsl";
 
 type RGB = [number, number, number];
 
-interface CustomLayerProps {
+// TODO load these from zarr
+const WIDTH = 128;
+const HEIGHT = 128;
+
+interface ZarrLayerProps {
   id: string;
   source: string;
   variable: string;
@@ -27,10 +31,11 @@ interface CustomLayerProps {
   map: Map;
 }
 
-class CustomLayer {
-  id: string;
+class ZarrLayer {
   type: "custom";
+  renderingMode: "2d";
 
+  id: string;
   zSource: string;
   variable: string;
   map: Map;
@@ -58,6 +63,9 @@ class CustomLayer {
   cmapTex: WebGLTexture;
   cmapLoc: WebGLUniformLocation;
 
+  bufferData: Float32Array;
+  texCoordBufferData: Float32Array;
+
   texLoc: WebGLUniformLocation;
   texCoordLoc: GLint;
 
@@ -69,8 +77,9 @@ class CustomLayer {
     colormap,
     clim,
     opacity,
-  }: CustomLayerProps) {
+  }: ZarrLayerProps) {
     this.type = "custom";
+    this.renderingMode = "2d";
 
     this.id = id;
     this.zSource = source;
@@ -109,6 +118,21 @@ class CustomLayer {
     this.cmapLoc = gl.getUniformLocation(this.program, "cmap");
     this.texLoc = gl.getUniformLocation(this.program, "tex");
     this.texCoordLoc = gl.getAttribLocation(this.program, "a_texCoord");
+    //
+    // prettier-ignore
+    this.bufferData = new Float32Array([
+      -1.0,  1.0,  // left top
+      -1.0, -1.0,  // left bottom
+       1.0,  1.0,  // right top
+       1.0, -1.0,  // right bottom
+    ]);
+    // prettier-ignore
+    this.texCoordBufferData = new Float32Array([
+        0.0, 0.0,  // left side
+        0.0, 1.0,
+        1.0, 0.0,  // right side
+        1.0, 1.0,
+    ]);
 
     const { loaders, levels } = await zarrLoad(
       this.zSource,
@@ -133,7 +157,7 @@ class CustomLayer {
     });
   }
 
-  async render(gl: WebGL2RenderingContext, matrix: number[]) {
+  render(gl: WebGL2RenderingContext, matrix: number[]) {
     const zoom = zoomToLevel(this.map.getZoom(), 5);
     const bounds = this.map.getBounds();
     const tiles = getTilesAtZoom(zoom, bounds);
@@ -178,7 +202,35 @@ class CustomLayer {
 
       gl.activeTexture(gl.TEXTURE0);
 
-      await tile.loadBuffer();
+      // We don't await this, and just hope it finishes loading
+      // by the next time we come around??
+      tile.fetchData();
+      if (!tile.data) return;
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, tile.tileBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, this.bufferData, gl.STATIC_DRAW);
+
+      gl.bindBuffer(gl.ARRAY_BUFFER, tile.texCoordBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, this.texCoordBufferData, gl.STATIC_DRAW);
+
+      // Bind and set texture for the tile
+      gl.bindTexture(gl.TEXTURE_2D, tile.tileTexture);
+      gl.texImage2D(
+        gl.TEXTURE_2D,
+        0,
+        gl.R32F,
+        WIDTH,
+        HEIGHT,
+        0,
+        gl.RED,
+        gl.FLOAT,
+        tile.data,
+      );
+
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       gl.useProgram(this.program);
 
       gl.uniform1i(this.texLoc, 0);
@@ -201,4 +253,4 @@ class CustomLayer {
   }
 }
 
-export default { CustomLayer };
+export default { ZarrLayer };

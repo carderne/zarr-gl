@@ -22,7 +22,7 @@ const MapLayer = ({ id, source, variable, colormap, clim, opacity }: MapLayerPro
         console.warn("Layer already added:", id);
         return;
       }
-      const layer = new zarrgl.CustomLayer({
+      const layer = new zarrgl.ZarrLayer({
         id,
         source,
         variable,
