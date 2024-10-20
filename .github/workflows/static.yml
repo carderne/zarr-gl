@@ -23,8 +23,19 @@ jobs:
     steps:
       - uses: actions/checkout@v4
       - uses: actions/configure-pages@v5
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '20.x'
+          registry-url: 'https://registry.npmjs.org'
+      - run: npm install -g npm@10
+      - run: |
+          npm ci
+          npm run build
+          cd demo
+          npm ci
+          npm run build
       - uses: actions/upload-pages-artifact@v3
         with:
-          path: 'example'
+          path: 'demo/out'
       - uses: actions/deploy-pages@v4
         id: deployment
