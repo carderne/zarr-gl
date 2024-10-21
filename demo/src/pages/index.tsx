@@ -5,6 +5,7 @@ import Mapbox from "@/components/Mapbox";
 import MapLayer from "@/components/MapLayer";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Slider } from "@/ui/slider";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 
 const SOURCE = "https://weathermapdata.rdrn.me/era5_2020_num_l6.zarr";
 const STYLE = "mapbox://styles/carderne/cm25xy9gj00g601pl3cpmhwhj?fresh=true";
@@ -13,8 +14,8 @@ const ACCESS_TOKEN =
 
 const Index = () => {
   const [opacity, setOpacity] = useState(80);
-  const [[vmin, vmax]] = useState<[number, number]>([0, 365]);
-  const [band] = useState("num_wind");
+  const [[vmin, vmax], setVminVmax] = useState<[number, number]>([0, 365]);
+  const [variable, setVariable] = useState("num_wind");
   const colormap = useColormap("warm", { count: 255, mode: "dark" });
 
   return (
@@ -27,7 +28,7 @@ const Index = () => {
           vmax={vmax}
           opacity={opacity / 100}
           source={SOURCE}
-          variable={band}
+          variable={variable}
         />
       </Mapbox>
       <div className="fixed left-5 top-5 flex max-w-xs flex-col space-y-4">
@@ -48,7 +49,18 @@ const Index = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="p-6">
+          <CardContent className="flex flex-col space-y-2 p-6">
+            <Select defaultValue={variable} onValueChange={setVariable}>
+              <SelectTrigger className="w-full">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="num_all">Calm, Dry, Warm Days</SelectItem>
+                <SelectItem value="num_wind">Calm Days</SelectItem>
+                <SelectItem value="num_rain">Dry Days</SelectItem>
+                <SelectItem value="num_temp">Warm Days</SelectItem>
+              </SelectContent>
+            </Select>
             <div className="flex flex-col">
               Opacity
               <Slider
@@ -57,6 +69,17 @@ const Index = () => {
                 max={100}
                 step={1}
                 onValueChange={(vals) => setOpacity(vals[0])}
+              />
+            </div>
+            <div className="flex flex-col">
+              Min-Max
+              <Slider
+                value={[vmin, vmax]}
+                min={0}
+                max={365}
+                step={1}
+                minStepsBetweenThumbs={10}
+                onValueChange={(vals) => setVminVmax([vals[0], vals[1]])}
               />
             </div>
           </CardContent>

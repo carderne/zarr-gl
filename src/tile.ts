@@ -10,7 +10,6 @@ export interface Data {
 interface TileProps {
   chunk: ChunkTuple;
   loader: Loader;
-  band: string;
   gl: WebGL2RenderingContext;
 }
 
@@ -22,7 +21,6 @@ export type Loader = (
 class Tile {
   chunk: ChunkTuple;
   loader: Loader;
-  band: string;
   data: Float32Array | null;
 
   loading: boolean;
@@ -31,9 +29,8 @@ class Tile {
   tileBuffer: WebGLBuffer;
   texCoordBuffer: WebGLBuffer;
 
-  constructor({ chunk, loader, band, gl }: TileProps) {
+  constructor({ chunk, loader, gl }: TileProps) {
     this.chunk = chunk;
-    this.band = band;
     this.data = null;
     this.loader = loader;
 

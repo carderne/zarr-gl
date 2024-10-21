@@ -21,26 +21,27 @@ const WIDTH = 128;
 const HEIGHT = 128;
 
 interface ZarrLayerProps {
+  map: Map;
   id: string; // id for the layer, must be unique
   source: string; // Zarr source URL
   variable: string; // Zarr variable to display
-  colormap: RGB[];  // array of RGB triplets in 0-255
+  colormap: RGB[]; // array of RGB triplets in 0-255
   vmin: number; // lower bound for colormap
   vmax: number; // upper bound for colormap
   opacity?: number;
   minRenderZoom?: number;
-
-  map: Map;
+  invalidate?: () => void;
 }
 
 class ZarrLayer {
   type: "custom";
   renderingMode: "2d";
 
-  id: string;
-  zSource: string;
-  variable: string;
   map: Map;
+  id: string;
+  zarrSource: string;
+  variable: string;
+  invalidate: () => void;
 
   cmapLength: number;
   cmap: Float32Array;
@@ -49,6 +50,7 @@ class ZarrLayer {
   opacity: number;
   minRenderZoom: number;
 
+  gl: WebGL2RenderingContext;
   program: WebGLProgram;
   loaders: Record<string, Loader>;
   tiles: Record<string, Tile>;
@@ -83,13 +85,15 @@ class ZarrLayer {
     vmax,
     opacity = 1,
     minRenderZoom = 3,
+    invalidate = () => {},
   }: ZarrLayerProps) {
     this.type = "custom";
     this.renderingMode = "2d";
 
     this.id = id;
-    this.zSource = source;
+    this.zarrSource = source;
     this.variable = variable;
+    this.invalidate = invalidate;
 
     this.cmap = new Float32Array(colormap.flat().map((v) => v / 255.0));
     this.cmapLength = colormap.length;
@@ -106,9 +110,47 @@ class ZarrLayer {
 
   setOpacity(opacity: number) {
     this.opacity = opacity;
+    this.invalidate();
+  }
+
+  setVminVmax(vmin: number, vmax: number) {
+    this.vmin = vmin;
+    this.vmax = vmax;
+    this.invalidate();
+  }
+
+  async setVariable(variable: string) {
+    this.variable = variable;
+    this.tiles = {};
+    await this.prepareTiles();
+    this.invalidate();
+  }
+
+  async prepareTiles() {
+    const { loaders, levels } = await zarrLoad(
+      this.zarrSource,
+      "v2",
+      this.variable,
+    );
+    levels.forEach((z: number) => {
+      const loader = loaders[z + "/" + this.variable];
+      this.loaders[z] = loader;
+      Array.from({ length: Math.pow(2, z) }, (_, x) => {
+        Array.from({ length: Math.pow(2, z) }, (_, y) => {
+          const key = [z, x, y].join(",");
+          const chunk: ChunkTuple = [y, x]; // NOTE: chunks go [Y, X]
+          this.tiles[key] = new Tile({
+            chunk,
+            loader,
+            gl: this.gl,
+          });
+        });
+      });
+    });
   }
 
   async onAdd(_map: Map, gl: WebGL2RenderingContext) {
+    this.gl = gl;
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
     this.program = createProgram(gl, vertexShader, fragmentShader);
@@ -146,27 +188,7 @@ class ZarrLayer {
         1.0, 1.0,
     ]);
 
-    const { loaders, levels } = await zarrLoad(
-      this.zSource,
-      "v2",
-      this.variable,
-    );
-    levels.forEach((z: number) => {
-      const loader = loaders[z + "/" + this.variable];
-      this.loaders[z] = loader;
-      Array.from({ length: Math.pow(2, z) }, (_, x) => {
-        Array.from({ length: Math.pow(2, z) }, (_, y) => {
-          const key = [z, x, y].join(",");
-          const chunk: ChunkTuple = [y, x]; // NOTE: chunks go [Y, X]
-          this.tiles[key] = new Tile({
-            chunk,
-            loader,
-            band: this.variable,
-            gl,
-          });
-        });
-      });
-    });
+    await this.prepareTiles();
   }
 
   render(gl: WebGL2RenderingContext, matrix: number[]) {

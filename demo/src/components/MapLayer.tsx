@@ -26,6 +26,7 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
         return;
       }
       const zarrLayer = new zarrgl.ZarrLayer({
+        map,
         id,
         source,
         variable,
@@ -33,7 +34,7 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
         vmin,
         vmax,
         opacity,
-        map,
+        invalidate: () => map.triggerRepaint(),
       });
       map.addLayer(zarrLayer, "building");
       setLayer(zarrLayer);
@@ -44,9 +45,20 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
   useEffect(() => {
     if (layer) {
       layer.setOpacity(opacity);
-      map.triggerRepaint();
     }
   }, [map, layer, opacity]);
+
+  useEffect(() => {
+    if (layer) {
+      layer.setVariable(variable);
+    }
+  }, [map, layer, variable]);
+
+  useEffect(() => {
+    if (layer) {
+      layer.setVminVmax(vmin, vmax);
+    }
+  }, [map, layer, vmin, vmax]);
 
   return null;
 };
