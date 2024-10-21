@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import mapboxgl from "mapbox-gl";
-import { MapboxContext } from "@/libs/use-mapbox";
+import { MapboxContext } from "@/hooks/use-mapbox";
 
 interface MapboxProps {
   children: React.ReactNode;

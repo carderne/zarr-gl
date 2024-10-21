@@ -104,6 +104,10 @@ class ZarrLayer {
     this.tiles = {};
   }
 
+  setOpacity(opacity: number) {
+    this.opacity = opacity;
+  }
+
   async onAdd(_map: Map, gl: WebGL2RenderingContext) {
     const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);

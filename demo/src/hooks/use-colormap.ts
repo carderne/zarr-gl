@@ -1,5 +1,5 @@
 import { useMemo } from "react";
-import makeColormap, { type Options } from "./colormap";
+import makeColormap, { type Options } from "@/lib/colormap";
 
 const useColormap = (name: string, options: Options) => {
   const colormap = useMemo(() => {
