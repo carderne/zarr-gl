@@ -3,6 +3,7 @@ import { useState } from "react";
 import useColormap from "@/hooks/use-colormap";
 import Mapbox from "@/components/Mapbox";
 import MapLayer from "@/components/MapLayer";
+import ColorGradient from "@/components/ColorGradient";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Slider } from "@/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
@@ -49,7 +50,7 @@ const Index = () => {
           </CardContent>
         </Card>
         <Card>
-          <CardContent className="flex flex-col space-y-2 p-6">
+          <CardContent className="flex flex-col space-y-4 p-6">
             <Select defaultValue={variable} onValueChange={setVariable}>
               <SelectTrigger className="w-full">
                 <SelectValue />
@@ -81,6 +82,13 @@ const Index = () => {
                 minStepsBetweenThumbs={10}
                 onValueChange={(vals) => setVminVmax([vals[0], vals[1]])}
               />
+            </div>
+            <div className="flex flex-col">
+              <div className="flex flex-row justify-between">
+                <span>Less Nice</span>
+                <span>More Nice</span>
+              </div>
+              <ColorGradient colormap={colormap} />
             </div>
           </CardContent>
         </Card>
