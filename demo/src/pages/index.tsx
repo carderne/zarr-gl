@@ -3,7 +3,7 @@ import { useState } from "react";
 import useColormap from "@/hooks/use-colormap";
 import Mapbox from "@/components/Mapbox";
 import MapLayer from "@/components/MapLayer";
-import ColorGradient from "@/components/ColorGradient";
+import { ColorSlider } from "@/ui/color-slider";
 import { Card, CardContent, CardHeader, CardTitle } from "@/ui/card";
 import { Slider } from "@/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
@@ -56,10 +56,24 @@ const Index = () => {
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="num_all">Calm, Dry, Warm Days</SelectItem>
-                <SelectItem value="num_wind">Calm Days</SelectItem>
-                <SelectItem value="num_rain">Dry Days</SelectItem>
-                <SelectItem value="num_temp">Warm Days</SelectItem>
+                <SelectItem value="num_wind">
+                  <div>Calm Days</div>
+                  <div className="text-xs">Days where the wind never goes over 19 knots</div>
+                </SelectItem>
+                <SelectItem value="num_rain">
+                  <div>Dry Days</div>
+                  <div className="text-xs">Days with less than 1mm of rain</div>
+                </SelectItem>
+                <SelectItem value="num_temp">
+                  <div>Warm Days</div>
+                  <div className="text-xs">
+                    Days where the max temperature is between 16 and 27 °C
+                  </div>
+                </SelectItem>
+                <SelectItem value="num_all">
+                  <div>Calm, Dry, Warm Days</div>
+                  <div className="text-xs">Perfect days meeting all the above criteria!</div>
+                </SelectItem>
               </SelectContent>
             </Select>
             <div className="flex flex-col">
@@ -73,22 +87,16 @@ const Index = () => {
               />
             </div>
             <div className="flex flex-col">
-              Min-Max
-              <Slider
+              Day Range
+              <ColorSlider
                 value={[vmin, vmax]}
                 min={0}
                 max={365}
                 step={1}
-                minStepsBetweenThumbs={10}
+                minStepsBetweenThumbs={50}
                 onValueChange={(vals) => setVminVmax([vals[0], vals[1]])}
+                colormap={colormap}
               />
-            </div>
-            <div className="flex flex-col">
-              <div className="flex flex-row justify-between">
-                <span>Less Nice Days</span>
-                <span>More Nice Days</span>
-              </div>
-              <ColorGradient colormap={colormap} />
             </div>
           </CardContent>
         </Card>
