@@ -21,7 +21,7 @@ const Index = () => {
 
   return (
     <div className="absolute h-screen w-screen">
-      <Mapbox accessToken={ACCESS_TOKEN} style={STYLE} zoom={3} center={[0, 50]}>
+      <Mapbox accessToken={ACCESS_TOKEN} style={STYLE} zoom={3} center={[0, 50]} minZoom={3}>
         <MapLayer
           id="weather"
           colormap={colormap}
@@ -87,7 +87,7 @@ const Index = () => {
               />
             </div>
             <div className="flex flex-col">
-              Day Range
+              Number of Days
               <ColorSlider
                 value={[vmin, vmax]}
                 min={0}

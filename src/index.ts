@@ -6,6 +6,7 @@ import {
   createProgram,
   getTilesAtZoom,
   tileToKey,
+  TileTuple,
 } from "./utils";
 import Tile, { type Loader, type ChunkTuple } from "./tile";
 import zarrLoad from "./store";
@@ -123,7 +124,31 @@ class ZarrLayer {
     this.variable = variable;
     this.tiles = {};
     await this.prepareTiles();
+    this.getVisibleTiles();
+    await this.prefetchTileData();
     this.invalidate();
+  }
+
+  async prefetchTileData() {
+    const tiles = this.getVisibleTiles();
+    for (const tiletuple of tiles) {
+      const tilekey = tileToKey(tiletuple);
+      const tile = this.tiles[tilekey];
+      if (tile) {
+        await tile.fetchData();
+      }
+    }
+  }
+
+  getVisibleTiles(): TileTuple[] {
+    const zoom = zoomToLevel(this.map.getZoom(), 5);
+
+    // If we don't have a loader for this zoom level just give up...
+    if (!this.loaders[zoom]) return [];
+
+    const bounds = this.map.getBounds();
+    const tiles = getTilesAtZoom(zoom, bounds);
+    return tiles;
   }
 
   async prepareTiles() {
@@ -196,12 +221,6 @@ class ZarrLayer {
   }
 
   render(gl: WebGL2RenderingContext, matrix: number[]) {
-    const zoom = zoomToLevel(this.map.getZoom(), 5);
-    const bounds = this.map.getBounds();
-    const tiles = getTilesAtZoom(zoom, bounds);
-
-    if (!this.loaders[zoom]) return;
-
     // Call useProgram once right at the start
     gl.useProgram(this.program);
 
@@ -229,6 +248,13 @@ class ZarrLayer {
     // The Mapbox matrix maps map-space coordinates to GLSL-space
     gl.uniformMatrix4fv(this.matrixLoc, false, matrix);
 
+    const tiles = this.getVisibleTiles();
+    // We don't await this, and just hope it finishes loading
+    // by the next time we come around??
+    // This is because Mapbox/WebGL doesn't like it if we await here
+    // and all sorts of weird stuff happens
+    this.prefetchTileData();
+
     for (const tiletuple of tiles) {
       const tilekey = tileToKey(tiletuple);
       const tile = this.tiles[tilekey];
@@ -238,7 +264,6 @@ class ZarrLayer {
       // by the next time we come around??
       // This is because Mapbox/WebGL doesn't like it if we await here
       // and all sorts of weird stuff happens
-      tile.fetchData();
       if (!tile.data) return;
 
       // These are used to scale and shift the this.bufferData
