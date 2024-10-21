@@ -21,12 +21,14 @@ const WIDTH = 128;
 const HEIGHT = 128;
 
 interface ZarrLayerProps {
-  id: string;
-  source: string;
-  variable: string;
-  colormap: RGB[];
-  clim: [number, number];
-  opacity: number;
+  id: string; // id for the layer, must be unique
+  source: string; // Zarr source URL
+  variable: string; // Zarr variable to display
+  colormap: RGB[];  // array of RGB triplets in 0-255
+  vmin: number; // lower bound for colormap
+  vmax: number; // upper bound for colormap
+  opacity?: number;
+  minRenderZoom?: number;
 
   map: Map;
 }
@@ -40,10 +42,12 @@ class ZarrLayer {
   variable: string;
   map: Map;
 
+  cmapLength: number;
   cmap: Float32Array;
-  cmin: number;
-  cmax: number;
+  vmin: number;
+  vmax: number;
   opacity: number;
+  minRenderZoom: number;
 
   program: WebGLProgram;
   loaders: Record<string, Loader>;
@@ -54,8 +58,8 @@ class ZarrLayer {
   shiftYLoc: WebGLUniformLocation;
   matrixLoc: WebGLUniformLocation;
 
-  cMinLoc: WebGLUniformLocation;
-  cMacLoc: WebGLUniformLocation;
+  vminLoc: WebGLUniformLocation;
+  vmaxLoc: WebGLUniformLocation;
   opacityLoc: WebGLUniformLocation;
   noDataLoc: WebGLUniformLocation;
 
@@ -75,8 +79,10 @@ class ZarrLayer {
     variable,
     map,
     colormap,
-    clim,
-    opacity,
+    vmin,
+    vmax,
+    opacity = 1,
+    minRenderZoom = 3,
   }: ZarrLayerProps) {
     this.type = "custom";
     this.renderingMode = "2d";
@@ -86,9 +92,11 @@ class ZarrLayer {
     this.variable = variable;
 
     this.cmap = new Float32Array(colormap.flat().map((v) => v / 255.0));
-    this.cmin = clim[0];
-    this.cmax = clim[1];
+    this.cmapLength = colormap.length;
+    this.vmin = vmin;
+    this.vmax = vmax;
     this.opacity = opacity;
+    this.minRenderZoom = minRenderZoom;
 
     this.map = map;
 
@@ -106,8 +114,8 @@ class ZarrLayer {
     this.shiftYLoc = gl.getUniformLocation(this.program, "shift_y");
     this.matrixLoc = gl.getUniformLocation(this.program, "u_matrix");
 
-    this.cMinLoc = gl.getUniformLocation(this.program, "cmin");
-    this.cMacLoc = gl.getUniformLocation(this.program, "cmax");
+    this.vminLoc = gl.getUniformLocation(this.program, "vmin");
+    this.vmaxLoc = gl.getUniformLocation(this.program, "vmax");
     this.opacityLoc = gl.getUniformLocation(this.program, "opacity");
     this.noDataLoc = gl.getUniformLocation(this.program, "nodata");
 
@@ -176,7 +184,7 @@ class ZarrLayer {
       gl.TEXTURE_2D,
       0,
       gl.RGB32F,
-      8,
+      this.cmapLength,
       1,
       0,
       gl.RGB,
@@ -193,8 +201,8 @@ class ZarrLayer {
       const [scale, shiftX, shiftY] = tileToScale(z, x, y);
       gl.useProgram(this.program);
 
-      gl.uniform1f(this.cMinLoc, this.cmin);
-      gl.uniform1f(this.cMacLoc, this.cmax);
+      gl.uniform1f(this.vminLoc, this.vmin);
+      gl.uniform1f(this.vmaxLoc, this.vmax);
       gl.uniform1f(this.opacityLoc, this.opacity);
       gl.uniform1f(this.noDataLoc, 9.969209968386869e36);
 

@@ -1,8 +1,8 @@
 #version 300 es
 precision highp float;
 
-uniform float cmin;
-uniform float cmax;
+uniform float vmin;
+uniform float vmax;
 uniform float opacity;
 uniform float nodata;
 
@@ -17,7 +17,7 @@ void main() {
   if (value == nodata) {
     discard;
   }
-  float norm = (value - cmin)/(cmax - cmin);
+  float norm = (value - vmin)/(vmax - vmin);
   float cla = clamp(norm, 0.0, 1.0);
   vec4 c = texture(cmap, vec2(cla, 0.5));
   vec4 color = vec4(c.r, c.g, c.b, opacity);

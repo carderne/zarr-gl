@@ -8,9 +8,9 @@ const source = "https://weathermapdata.rdrn.me/era5_2020_num_l6.zarr";
 const Index = () => {
   const [display] = useState(true);
   const [opacity] = useState(0.8);
-  const [clim] = useState<[number, number]>([1, 200]);
+  const [[vmin, vmax]] = useState<[number, number]>([0, 365]);
   const [band] = useState("num_wind");
-  const colormap = useColormap("rainbow", { count: 10, mode: "light" });
+  const colormap = useColormap("warm", { count: 255, mode: "dark" });
 
   return (
     <div style={{ position: "absolute", width: "100vw", height: "100vh" }}>
@@ -21,9 +21,10 @@ const Index = () => {
         center={[0, 50]}
       >
         <MapLayer
-          id="fancy"
+          id="weather"
           colormap={colormap}
-          clim={clim}
+          vmin={vmin}
+          vmax={vmax}
           display={display}
           opacity={opacity}
           source={source}

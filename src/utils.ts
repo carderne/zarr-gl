@@ -56,7 +56,7 @@ export const tileToScale = (
 };
 
 export const zoomToLevel = (zoom: number, maxZoom: number): number => {
-  if (maxZoom) return Math.min(Math.max(0, Math.floor(zoom)), maxZoom);
+  if (maxZoom) return Math.min(Math.max(3, Math.floor(zoom)), maxZoom);
   return Math.max(0, Math.floor(zoom));
 };
 

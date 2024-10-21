@@ -11,9 +11,20 @@ interface MapboxProps {
   minZoom?: number;
   maxZoom?: number;
   maxBounds?: [number, number, number, number];
+  debug?: boolean;
 }
 
-const Mapbox = ({ children, accessToken, style, center = [0, 0], zoom = 4 }: MapboxProps) => {
+const Mapbox = ({
+  children,
+  accessToken,
+  style,
+  center = [0, 0],
+  zoom = 4,
+  minZoom = 1,
+  maxZoom = 10,
+  maxBounds = null,
+  debug = false,
+}: MapboxProps) => {
   const mapRef = useRef<mapboxgl.Map | null>(null);
   const mapContainerRef = useRef<HTMLDivElement>();
   const [ready, setReady] = useState(false);
@@ -23,16 +34,19 @@ const Mapbox = ({ children, accessToken, style, center = [0, 0], zoom = 4 }: Map
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style,
+      center,
+      zoom,
+      minZoom,
+      maxZoom,
+      maxBounds,
+      projection: "mercator",
+      hash: true,
       renderWorldCopies: false,
       dragRotate: false,
       pitchWithRotate: false,
       touchZoomRotate: false,
-      center: center,
-      zoom: zoom,
-      projection: "mercator",
-      hash: true,
     });
-    mapRef.current.showTileBoundaries = true;
+    mapRef.current.showTileBoundaries = debug;
     mapRef.current.on("styledata", () => {
       setReady(true);
     });

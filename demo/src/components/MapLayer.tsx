@@ -8,12 +8,13 @@ interface MapLayerProps {
   source: string;
   variable: string;
   colormap: RGB[];
-  clim: [number, number];
-  display: boolean;
+  vmin: number;
+  vmax: number;
   opacity: number;
+  display: boolean;
 }
 
-const MapLayer = ({ id, source, variable, colormap, clim, opacity }: MapLayerProps) => {
+const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity }: MapLayerProps) => {
   const { map, ready } = useMapbox();
   const [loaded, setLoaded] = useState(false);
   useEffect(() => {
@@ -27,7 +28,8 @@ const MapLayer = ({ id, source, variable, colormap, clim, opacity }: MapLayerPro
         source,
         variable,
         colormap,
-        clim,
+        vmin,
+        vmax,
         opacity,
         map,
       });
