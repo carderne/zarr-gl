@@ -69,11 +69,11 @@ class ZarrLayer {
   cmapTex: WebGLTexture;
   cmapLoc: WebGLUniformLocation;
 
-  bufferData: Float32Array;
-  texCoordBufferData: Float32Array;
+  vertexArr: Float32Array;
+  pixCoordArr: Float32Array;
 
   texLoc: WebGLUniformLocation;
-  texCoordLoc: GLint;
+  pixCoordLoc: GLint;
 
   constructor({
     id,
@@ -158,34 +158,38 @@ class ZarrLayer {
     this.scaleLoc = gl.getUniformLocation(this.program, "scale");
     this.shiftXLoc = gl.getUniformLocation(this.program, "shift_x");
     this.shiftYLoc = gl.getUniformLocation(this.program, "shift_y");
-    this.matrixLoc = gl.getUniformLocation(this.program, "u_matrix");
+    this.matrixLoc = gl.getUniformLocation(this.program, "matrix");
 
     this.vminLoc = gl.getUniformLocation(this.program, "vmin");
     this.vmaxLoc = gl.getUniformLocation(this.program, "vmax");
     this.opacityLoc = gl.getUniformLocation(this.program, "opacity");
     this.noDataLoc = gl.getUniformLocation(this.program, "nodata");
 
-    this.vertexLoc = 0;
-    gl.bindAttribLocation(this.program, this.vertexLoc, "vertex");
-
+    // There is a single global texture for the colormap
     this.cmapTex = gl.createTexture();
     this.cmapLoc = gl.getUniformLocation(this.program, "cmap");
+
+    // The texture for each tile is created in the Tile constructor
     this.texLoc = gl.getUniformLocation(this.program, "tex");
-    this.texCoordLoc = gl.getAttribLocation(this.program, "a_texCoord");
-    //
+
+    // The `vertex` controls the location for the vertex shader
+    this.vertexLoc = gl.getAttribLocation(this.program, "vertex");
     // prettier-ignore
-    this.bufferData = new Float32Array([
-      -1.0,  1.0,  // left top
-      -1.0, -1.0,  // left bottom
-       1.0,  1.0,  // right top
-       1.0, -1.0,  // right bottom
+    this.vertexArr = new Float32Array([
+      -1.0,  1.0, // left top
+      -1.0, -1.0, // left bottom
+       1.0,  1.0, // right top
+       1.0, -1.0, // right bottom
     ]);
+
+    // While this texCoord controls the fragment shader pixel "lookup"
+    this.pixCoordLoc = gl.getAttribLocation(this.program, "pix_coord_in");
     // prettier-ignore
-    this.texCoordBufferData = new Float32Array([
-        0.0, 0.0,  // left side
-        0.0, 1.0,
-        1.0, 0.0,  // right side
-        1.0, 1.0,
+    this.pixCoordArr = new Float32Array([
+      0.0, 0.0, // left side
+      0.0, 1.0,
+      1.0, 0.0, // right side
+      1.0, 1.0,
     ]);
 
     await this.prepareTiles();
@@ -198,86 +202,78 @@ class ZarrLayer {
 
     if (!this.loaders[zoom]) return;
 
-    // Bind and configure texture for colormap
+    // Call useProgram once right at the start
     gl.useProgram(this.program);
-    gl.activeTexture(gl.TEXTURE1); // Activate texture unit 1 for the colormap
-    gl.bindTexture(gl.TEXTURE_2D, this.cmapTex); // Bind colormap texture
+
+    // This is the colormap
+    // First activate TEXTURE1, bind the unofirm, set the parameters
+    // and then upload the texture
+    // Important that these happen in roughly this order!
+    gl.activeTexture(gl.TEXTURE1);
+    gl.bindTexture(gl.TEXTURE_2D, this.cmapTex);
+    gl.uniform1i(this.cmapLoc, 1);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-    gl.texImage2D(
-      gl.TEXTURE_2D,
-      0,
-      gl.RGB32F,
-      this.cmapLength,
-      1,
-      0,
-      gl.RGB,
-      gl.FLOAT,
-      this.cmap,
-    );
-    gl.uniform1i(this.cmapLoc, 1); // Assign to texture unit 1
+    // prettier-ignore
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB32F, this.cmapLength, 1, 0, gl.RGB, gl.FLOAT, this.cmap);
 
-    for (const ti of tiles) {
-      const k = tileToKey(ti);
-      const [z, x, y] = ti;
-      const tile = this.tiles[k];
+    // Set the basic uniforms for color handling
+    gl.uniform1f(this.vminLoc, this.vmin);
+    gl.uniform1f(this.vmaxLoc, this.vmax);
+    gl.uniform1f(this.opacityLoc, this.opacity);
+    gl.uniform1f(this.noDataLoc, 9.969209968386869e36);
+
+    // The Mapbox matrix maps map-space coordinates to GLSL-space
+    gl.uniformMatrix4fv(this.matrixLoc, false, matrix);
+
+    for (const tiletuple of tiles) {
+      const tilekey = tileToKey(tiletuple);
+      const tile = this.tiles[tilekey];
       if (!tile) return;
-      const [scale, shiftX, shiftY] = tileToScale(z, x, y);
-      gl.useProgram(this.program);
-
-      gl.uniform1f(this.vminLoc, this.vmin);
-      gl.uniform1f(this.vmaxLoc, this.vmax);
-      gl.uniform1f(this.opacityLoc, this.opacity);
-      gl.uniform1f(this.noDataLoc, 9.969209968386869e36);
-
-      gl.uniformMatrix4fv(this.matrixLoc, false, matrix);
-
-      gl.activeTexture(gl.TEXTURE0);
 
       // We don't await this, and just hope it finishes loading
       // by the next time we come around??
+      // This is because Mapbox/WebGL doesn't like it if we await here
+      // and all sorts of weird stuff happens
       tile.fetchData();
       if (!tile.data) return;
 
-      gl.bindBuffer(gl.ARRAY_BUFFER, tile.tileBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, this.bufferData, gl.STATIC_DRAW);
-
-      gl.bindBuffer(gl.ARRAY_BUFFER, tile.texCoordBuffer);
-      gl.bufferData(gl.ARRAY_BUFFER, this.texCoordBufferData, gl.STATIC_DRAW);
-
-      // Bind and set texture for the tile
-      gl.bindTexture(gl.TEXTURE_2D, tile.tileTexture);
-      gl.texImage2D(
-        gl.TEXTURE_2D,
-        0,
-        gl.R32F,
-        WIDTH,
-        HEIGHT,
-        0,
-        gl.RED,
-        gl.FLOAT,
-        tile.data,
-      );
-
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
-      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
-      gl.useProgram(this.program);
-
-      gl.uniform1i(this.texLoc, 0);
+      // These are used to scale and shift the this.bufferData
+      // coordinates from covering the whole canvas to just the part
+      // that the tile covers
+      const [scale, shiftX, shiftY] = tileToScale(tiletuple);
       gl.uniform1f(this.scaleLoc, scale);
       gl.uniform1f(this.shiftXLoc, shiftX);
       gl.uniform1f(this.shiftYLoc, shiftY);
 
-      // Enable and configure vertex attribute array
+      // For some reason it is quite important for these two bind+buffer
+      // to happen before the texture stuff
+      gl.bindBuffer(gl.ARRAY_BUFFER, tile.vertexBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, this.vertexArr, gl.STATIC_DRAW);
+      gl.bindBuffer(gl.ARRAY_BUFFER, tile.pixCoordBuffer);
+      gl.bufferData(gl.ARRAY_BUFFER, this.pixCoordArr, gl.STATIC_DRAW);
+
+      // Bind and set texture for the tile
+      // As with cmap, the order here is important
+      gl.activeTexture(gl.TEXTURE0);
+      gl.bindTexture(gl.TEXTURE_2D, tile.tileTexture);
+      gl.uniform1i(this.texLoc, 0);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
+      gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      // prettier-ignore
+      gl.texImage2D( gl.TEXTURE_2D, 0, gl.R32F, WIDTH, HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
+
+      // These are the vertex and pixCoord that were buffered+bound
+      // further up. For some reason this has to happen _after_ the
+      // texture stuff??
       gl.enableVertexAttribArray(this.vertexLoc);
       gl.vertexAttribPointer(this.vertexLoc, 2, gl.FLOAT, false, 0, 0);
-
-      gl.enableVertexAttribArray(this.texCoordLoc);
-      gl.vertexAttribPointer(this.texCoordLoc, 2, gl.FLOAT, false, 0, 0);
+      gl.enableVertexAttribArray(this.pixCoordLoc);
+      gl.vertexAttribPointer(this.pixCoordLoc, 2, gl.FLOAT, false, 0, 0);
 
       // Enable blending and draw the tile
       gl.enable(gl.BLEND);

@@ -44,7 +44,7 @@ const Mapbox = ({
       renderWorldCopies: false,
       dragRotate: false,
       pitchWithRotate: false,
-      touchZoomRotate: false,
+      touchZoomRotate: true,
     });
     mapRef.current.showTileBoundaries = debug;
     mapRef.current.on("styledata", () => {

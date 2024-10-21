@@ -44,12 +44,9 @@ export const tileToKey = (tile: TileTuple): string => {
   return tile.join(",");
 };
 
-export const tileToScale = (
-  zoom: number,
-  x: number,
-  y: number,
-): [number, number, number] => {
-  const scale = 1 / 2 ** zoom;
+export const tileToScale = (tile: TileTuple): [number, number, number] => {
+  const [z, x, y] = tile;
+  const scale = 1 / 2 ** z;
   const shiftX = x * scale;
   const shiftY = y * scale;
   return [scale, shiftX, shiftY];

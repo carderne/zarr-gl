@@ -85,8 +85,8 @@ const Index = () => {
             </div>
             <div className="flex flex-col">
               <div className="flex flex-row justify-between">
-                <span>Less Nice</span>
-                <span>More Nice</span>
+                <span>Less Nice Days</span>
+                <span>More Nice Days</span>
               </div>
               <ColorGradient colormap={colormap} />
             </div>

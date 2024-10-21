@@ -5,7 +5,7 @@
   "main": "index.js",
   "type": "module",
   "scripts": {
-    "dev": "next -p 3000",
+    "dev": "next -p 3000 -H 0.0.0.0",
     "build": "next build",
     "start": "next start",
     "fmt": "prettier --write src/**/*.{ts,tsx}",

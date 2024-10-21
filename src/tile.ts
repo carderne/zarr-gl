@@ -26,8 +26,8 @@ class Tile {
   loading: boolean;
 
   tileTexture: WebGLTexture;
-  tileBuffer: WebGLBuffer;
-  texCoordBuffer: WebGLBuffer;
+  vertexBuffer: WebGLBuffer;
+  pixCoordBuffer: WebGLBuffer;
 
   constructor({ chunk, loader, gl }: TileProps) {
     this.chunk = chunk;
@@ -37,8 +37,8 @@ class Tile {
     this.loading = false;
 
     this.tileTexture = gl.createTexture();
-    this.tileBuffer = gl.createBuffer();
-    this.texCoordBuffer = gl.createBuffer();
+    this.vertexBuffer = gl.createBuffer();
+    this.pixCoordBuffer = gl.createBuffer();
   }
 
   async fetchData() {
