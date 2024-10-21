@@ -216,8 +216,9 @@ class ZarrLayer {
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
     gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+    // iOS Safari only supports RGB16F
     // prettier-ignore
-    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB32F, this.cmapLength, 1, 0, gl.RGB, gl.FLOAT, this.cmap);
+    gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGB16F, this.cmapLength, 1, 0, gl.RGB, gl.FLOAT, this.cmap);
 
     // Set the basic uniforms for color handling
     gl.uniform1f(this.vminLoc, this.vmin);
@@ -264,8 +265,9 @@ class ZarrLayer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+      // iOS Safari only supports RGB16F
       // prettier-ignore
-      gl.texImage2D( gl.TEXTURE_2D, 0, gl.R32F, WIDTH, HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
+      gl.texImage2D( gl.TEXTURE_2D, 0, gl.R16F, WIDTH, HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
 
       // These are the vertex and pixCoord that were buffered+bound
       // further up. For some reason this has to happen _after_ the
