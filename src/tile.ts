@@ -1,22 +1,11 @@
-// ChunkTuple goes [Y, X]
-export type ChunkTuple = [number, number];
-
-export interface Data {
-  data: Float32Array;
-  offset: number;
-  stride: [number, number];
-}
+import type { ChunkTuple, Data, Loader } from "zarr-js";
+import { mustCreateBuffer, mustCreateTexture, timeout } from "./utils";
 
 interface TileProps {
   chunk: ChunkTuple;
   loader: Loader;
   gl: WebGL2RenderingContext;
 }
-
-export type Loader = (
-  chunk: ChunkTuple,
-  callback: (err: Error, data: Data) => void,
-) => void;
 
 class Tile {
   chunk: ChunkTuple;
@@ -36,24 +25,27 @@ class Tile {
 
     this.loading = false;
 
-    this.tileTexture = gl.createTexture();
-    this.vertexBuffer = gl.createBuffer();
-    this.pixCoordBuffer = gl.createBuffer();
+    this.tileTexture = mustCreateTexture(gl);
+    this.vertexBuffer = mustCreateBuffer(gl);
+    this.pixCoordBuffer = mustCreateBuffer(gl);
   }
 
-  async fetchData() {
+  async fetchData(): Promise<Float32Array> {
     if (this.data) {
       return this.data;
-    } else if (!this.loading) {
-      return await new Promise<Float32Array>((resolve) => {
-        this.loading = true;
-        this.loader(this.chunk, (_: Error, data: Data) => {
-          this.data = data.data;
-          this.loading = false;
-          resolve(this.data);
-        });
-      });
+    } else if (this.loading) {
+      // This is probably a bad idea...
+      await timeout(500);
+      return this.fetchData();
     }
+    return await new Promise<Float32Array>((resolve) => {
+      this.loading = true;
+      this.loader(this.chunk, (_: Error, data: Data) => {
+        this.loading = false;
+        this.data = data.data;
+        resolve(this.data);
+      });
+    });
   }
 }
 

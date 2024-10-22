@@ -1,7 +1,7 @@
 import { createRoot } from "react-dom/client";
 import mapboxgl from "mapbox-gl";
 import { useCallback, useEffect, useState } from "react";
-import zarrgl from "zarr-gl";
+import { ZarrLayer } from "zarr-gl";
 
 import { useMapbox } from "@/hooks/use-mapbox";
 import { type RGB } from "@/lib/colormap";
@@ -20,7 +20,7 @@ interface MapLayerProps {
 
 const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }: MapLayerProps) => {
   const { map, ready } = useMapbox();
-  const [layer, setLayer] = useState<any>(); //eslint-disable-line @typescript-eslint/no-explicit-any
+  const [layer, setLayer] = useState<ZarrLayer>();
   const [loaded, setLoaded] = useState(false);
 
   const handleMapClick = useCallback(
@@ -30,17 +30,18 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
         return; // Exit early if we clicked on a marker
       }
 
-      if (!layer) return;
+      if (!map || !layer) return;
 
       const point = mapboxgl.MercatorCoordinate.fromLngLat(e.lngLat);
       const val = await layer.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
 
-      const label = {
-        num_wind: "calm",
-        num_rain: "dry",
-        num_temp: "warm",
-        num_all: "great",
-      }[variable];
+      const label =
+        {
+          num_wind: "calm",
+          num_rain: "dry",
+          num_temp: "warm",
+          num_all: "great",
+        }[variable] || "";
 
       const { lng, lat } = e.lngLat;
       const container = document.createElement("div");
@@ -56,12 +57,12 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
   );
 
   useEffect(() => {
-    if (ready && !loaded) {
+    if (map && ready && !loaded) {
       if (map.getLayer(id)) {
         console.warn("Layer already added:", id);
         return;
       }
-      const zarrLayer = new zarrgl.ZarrLayer({
+      const zarrLayer = new ZarrLayer({
         map,
         id,
         source,

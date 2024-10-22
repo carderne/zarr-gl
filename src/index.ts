@@ -9,12 +9,13 @@ import {
   TileTuple,
   lat2tile,
   lon2tile,
+  mustGetUniformLocation,
+  mustCreateTexture,
 } from "./utils";
-import Tile, { type Loader, type ChunkTuple } from "./tile";
+import type { ChunkTuple, Loader } from "zarr-js";
+import Tile from "./tile";
 import zarrLoad from "./store";
-// @ts-expect-error TODO figure out type declaration for this
 import fragmentSource from "./shaders/frag.glsl";
-// @ts-expect-error TODO figure out type declaration for this
 import vertexSource from "./shaders/vert.glsl";
 
 type RGB = [number, number, number];
@@ -23,7 +24,7 @@ type RGB = [number, number, number];
 const WIDTH = 128;
 const HEIGHT = 128;
 
-interface ZarrLayerProps {
+export interface ZarrLayerProps {
   map: Map;
   id: string; // id for the layer, must be unique
   source: string; // Zarr source URL
@@ -36,7 +37,7 @@ interface ZarrLayerProps {
   invalidate?: () => void;
 }
 
-class ZarrLayer {
+export class ZarrLayer {
   type: "custom";
   renderingMode: "2d";
 
@@ -151,6 +152,9 @@ class ZarrLayer {
     if (!this.loaders[zoom]) return [];
 
     const bounds = this.map.getBounds();
+    if (!bounds) {
+      throw new Error("Couldn't get map bounds");
+    }
     const tiles = getTilesAtZoom(zoom, bounds);
     return tiles;
   }
@@ -163,7 +167,11 @@ class ZarrLayer {
     );
     this.maxDataLevel = Math.max(...levels);
     levels.forEach((z: number) => {
-      const loader = loaders[z + "/" + this.variable];
+      const loaderKey = z + "/" + this.variable;
+      const loader = loaders[loaderKey];
+      if (!loader) {
+        throw new Error(`Failed to get loader for ${loaderKey}`);
+      }
       this.loaders[z] = loader;
       Array.from({ length: Math.pow(2, z) }, (_, x) => {
         Array.from({ length: Math.pow(2, z) }, (_, y) => {
@@ -209,22 +217,22 @@ class ZarrLayer {
     const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
     this.program = createProgram(gl, vertexShader, fragmentShader);
 
-    this.scaleLoc = gl.getUniformLocation(this.program, "scale");
-    this.shiftXLoc = gl.getUniformLocation(this.program, "shift_x");
-    this.shiftYLoc = gl.getUniformLocation(this.program, "shift_y");
-    this.matrixLoc = gl.getUniformLocation(this.program, "matrix");
+    this.scaleLoc = mustGetUniformLocation(gl, this.program, "scale");
+    this.shiftXLoc = mustGetUniformLocation(gl, this.program, "shift_x");
+    this.shiftYLoc = mustGetUniformLocation(gl, this.program, "shift_y");
+    this.matrixLoc = mustGetUniformLocation(gl, this.program, "matrix");
 
-    this.vminLoc = gl.getUniformLocation(this.program, "vmin");
-    this.vmaxLoc = gl.getUniformLocation(this.program, "vmax");
-    this.opacityLoc = gl.getUniformLocation(this.program, "opacity");
-    this.noDataLoc = gl.getUniformLocation(this.program, "nodata");
+    this.vminLoc = mustGetUniformLocation(gl, this.program, "vmin");
+    this.vmaxLoc = mustGetUniformLocation(gl, this.program, "vmax");
+    this.opacityLoc = mustGetUniformLocation(gl, this.program, "opacity");
+    this.noDataLoc = mustGetUniformLocation(gl, this.program, "nodata");
 
     // There is a single global texture for the colormap
-    this.cmapTex = gl.createTexture();
-    this.cmapLoc = gl.getUniformLocation(this.program, "cmap");
+    this.cmapTex = mustCreateTexture(gl);
+    this.cmapLoc = mustGetUniformLocation(gl, this.program, "cmap");
 
     // The texture for each tile is created in the Tile constructor
-    this.texLoc = gl.getUniformLocation(this.program, "tex");
+    this.texLoc = mustGetUniformLocation(gl, this.program, "tex");
 
     // The `vertex` controls the location for the vertex shader
     this.vertexLoc = gl.getAttribLocation(this.program, "vertex");
@@ -338,5 +346,3 @@ class ZarrLayer {
     }
   }
 }
-
-export default { ZarrLayer };

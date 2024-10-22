@@ -38,6 +38,7 @@ const webpackConfig = {
       module: true,
     },
     chunkFormat: "module",
+    clean: true,
   },
 };
 

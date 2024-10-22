@@ -25,7 +25,7 @@
 // SOFTWARE.
 
 import chroma from "chroma-js";
-import type { Color, Scale } from "chroma-js";
+import type { Color } from "chroma-js";
 
 const colormaps = [
   { name: "reds", type: "sequentialSingleHue" },
@@ -98,9 +98,7 @@ const makeColormap = (name: string, options: Options): RGB[] => {
   if (mode === "dark") {
     start = chroma("#1b1e23").brighten(0);
     middle = chroma("#808080").brighten(0.6);
-  }
-
-  if (mode === "light") {
+  } else {
     start = chroma("#FFFFFF").darken(0);
     middle = chroma("#808080").brighten(0.75);
   }
@@ -380,7 +378,7 @@ const makeColormap = (name: string, options: Options): RGB[] => {
         ];
       }
       break;
-    case "sinebow":
+    default:
       bezier = false;
       if (mode === "dark") {
         ramp = [
@@ -393,8 +391,7 @@ const makeColormap = (name: string, options: Options): RGB[] => {
           chroma(purple),
           chroma(pink),
         ];
-      }
-      if (mode === "light") {
+      } else {
         ramp = [
           chroma(red),
           chroma(orange),
@@ -409,13 +406,8 @@ const makeColormap = (name: string, options: Options): RGB[] => {
       break;
   }
 
-  let scale: Scale;
-  if (bezier) {
-    // @ts-expect-error bad typing on bezier?
-    scale = chroma.bezier(ramp).scale();
-  } else {
-    scale = chroma.scale(ramp).mode("lab");
-  }
+  // @ts-expect-error bad typing on bezier
+  let scale = bezier ? chroma.bezier(ramp!).scale() : chroma.scale(ramp!).mode("lab");
   if (correctLightness) {
     scale = scale.correctLightness();
   }

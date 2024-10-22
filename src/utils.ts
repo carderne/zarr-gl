@@ -61,33 +61,71 @@ export const createShader = (
   gl: WebGL2RenderingContext,
   type: GLenum,
   source: string,
-): WebGLShader | null => {
+): WebGLShader => {
   const shader = gl.createShader(type);
+  if (!shader) {
+    throw new Error(`createShader failed ${type}`);
+  }
   gl.shaderSource(shader, source);
   gl.compileShader(shader);
   const success = gl.getShaderParameter(shader, gl.COMPILE_STATUS);
-  if (success) {
-    return shader;
+  if (!success) {
+    const msg = gl.getShaderInfoLog(shader);
+    gl.deleteShader(shader);
+    throw new Error(`Failed to create shader ${type}: ${msg}`);
   }
-
-  console.warn(gl.getShaderInfoLog(shader));
-  gl.deleteShader(shader);
+  return shader;
 };
 
 export const createProgram = (
   gl: WebGL2RenderingContext,
   vertexShader: WebGLShader,
   fragmentShader: WebGLShader,
-): WebGLProgram | null => {
+): WebGLProgram => {
   const program = gl.createProgram();
+  if (!program) {
+    throw new Error("createProgram failed");
+  }
   gl.attachShader(program, vertexShader);
   gl.attachShader(program, fragmentShader);
   gl.linkProgram(program);
   const success = gl.getProgramParameter(program, gl.LINK_STATUS);
-  if (success) {
-    return program;
+  if (!success) {
+    const msg = gl.getProgramInfoLog(program);
+    gl.deleteProgram(program);
+    throw new Error(`Failed to create program: ${msg}`);
   }
+  return program;
+};
 
-  console.warn(gl.getProgramInfoLog(program));
-  gl.deleteProgram(program);
+export const mustGetUniformLocation = (
+  gl: WebGL2RenderingContext,
+  program: WebGLProgram,
+  name: string,
+): WebGLUniformLocation => {
+  const loc = gl.getUniformLocation(program, name);
+  if (!loc) {
+    throw new Error(`Failed to get Uniform Location for ${name}`);
+  }
+  return loc;
+};
+
+export const mustCreateTexture = (gl: WebGL2RenderingContext): WebGLTexture => {
+  const tex = gl.createTexture();
+  if (!tex) {
+    throw new Error("Failed to create texture");
+  }
+  return tex;
+};
+
+export const mustCreateBuffer = (gl: WebGL2RenderingContext): WebGLBuffer => {
+  const buf = gl.createBuffer();
+  if (!buf) {
+    throw new Error("Failed to create buffer");
+  }
+  return buf;
+};
+
+export const timeout = (ms: number) => {
+  return new Promise((resolve) => setTimeout(resolve, ms));
 };

@@ -1,8 +1,7 @@
 /* https://www.totaltypescript.com/tsconfig-cheat-sheet */
 {
-  "include": [
-    "src/**/*.ts"
-  ],
+  "include": ["src/**/*.ts"],
+  "exclude": ["node_modules", "dist"],
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,
@@ -11,13 +10,15 @@
     "resolveJsonModule": true,
     "moduleDetection": "force",
     "isolatedModules": true,
-    "strict": false,
+    "strict": true,
+    "strictPropertyInitialization": false,
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
     "module": "esnext",
     "moduleResolution": "node",
-    "outDir": "dist",
+    "declarationDir": "./dist",
+    "outDir": "./dist",
     "sourceMap": true,
     "declaration": true,
     "removeComments": true,

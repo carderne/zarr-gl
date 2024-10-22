@@ -22,15 +22,18 @@ const Mapbox = ({
   zoom = 4,
   minZoom = 1,
   maxZoom = 10,
-  maxBounds = null,
   debug = false,
+  maxBounds,
 }: MapboxProps) => {
   const mapRef = useRef<mapboxgl.Map | null>(null);
-  const mapContainerRef = useRef<HTMLDivElement>();
+  const mapContainerRef = useRef<HTMLDivElement>(null);
   const [ready, setReady] = useState(false);
 
   useEffect(() => {
     mapboxgl.accessToken = accessToken;
+    if (!mapContainerRef.current) {
+      return;
+    }
     mapRef.current = new mapboxgl.Map({
       container: mapContainerRef.current,
       style,
@@ -52,13 +55,13 @@ const Mapbox = ({
     });
 
     return () => {
-      mapRef.current.remove();
+      mapRef.current?.remove();
       setReady(false);
     };
-  }, []); // eslint-disable-line react-hooks/exhaustive-deps
+  }, [mapContainerRef]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
-    <MapboxContext.Provider value={{ map: mapRef.current, ready }}>
+    <MapboxContext.Provider value={{ map: mapRef.current!, ready }}>
       <div className="absolute h-screen w-screen" ref={mapContainerRef} />
       {ready && children}
     </MapboxContext.Provider>
