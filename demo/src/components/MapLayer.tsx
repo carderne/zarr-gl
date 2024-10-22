@@ -1,8 +1,11 @@
-import { useEffect, useState } from "react";
+import { createRoot } from "react-dom/client";
+import mapboxgl from "mapbox-gl";
+import { useCallback, useEffect, useState } from "react";
 import zarrgl from "zarr-gl";
 
 import { useMapbox } from "@/hooks/use-mapbox";
 import { type RGB } from "@/lib/colormap";
+import Marker from "./Marker";
 
 interface MapLayerProps {
   id: string;
@@ -19,6 +22,39 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
   const { map, ready } = useMapbox();
   const [layer, setLayer] = useState<any>(); //eslint-disable-line @typescript-eslint/no-explicit-any
   const [loaded, setLoaded] = useState(false);
+
+  const handleMapClick = useCallback(
+    async (e: mapboxgl.MapMouseEvent) => {
+      const target = e.originalEvent.target as HTMLElement;
+      if (target.closest(".mapboxgl-marker")) {
+        return; // Exit early if we clicked on a marker
+      }
+
+      if (!layer) return;
+
+      const point = mapboxgl.MercatorCoordinate.fromLngLat(e.lngLat);
+      const val = await layer.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
+
+      const label = {
+        num_wind: "calm",
+        num_rain: "dry",
+        num_temp: "warm",
+        num_all: "great",
+      }[variable];
+
+      const { lng, lat } = e.lngLat;
+      const container = document.createElement("div");
+      const root = createRoot(container);
+      const marker = new mapboxgl.Marker(container);
+
+      const el = <Marker marker={marker} val={val} label={label} />;
+
+      root.render(el);
+      marker.setLngLat({ lng, lat }).addTo(map);
+    },
+    [map, layer, variable],
+  );
+
   useEffect(() => {
     if (ready && !loaded) {
       if (map.getLayer(id)) {
@@ -41,6 +77,15 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
       setLoaded(true);
     }
   }, [ready]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (map && loaded) {
+      map.on("click", handleMapClick);
+      return () => {
+        map.off("click", handleMapClick);
+      };
+    }
+  }, [map, loaded, handleMapClick]);
 
   useEffect(() => {
     if (layer) {

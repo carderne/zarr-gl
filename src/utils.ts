@@ -1,10 +1,10 @@
 export type TileTuple = [number, number, number];
 
-function lon2tile(lon: number, zoom: number): number {
+export function lon2tile(lon: number, zoom: number): number {
   return Math.floor(((lon + 180) / 360) * Math.pow(2, zoom));
 }
 
-function lat2tile(lat: number, zoom: number): number {
+export function lat2tile(lat: number, zoom: number): number {
   return Math.floor(
     ((1 -
       Math.log(

@@ -7,6 +7,8 @@ import {
   getTilesAtZoom,
   tileToKey,
   TileTuple,
+  lat2tile,
+  lon2tile,
 } from "./utils";
 import Tile, { type Loader, type ChunkTuple } from "./tile";
 import zarrLoad from "./store";
@@ -51,10 +53,12 @@ class ZarrLayer {
   opacity: number;
   minRenderZoom: number;
 
-  gl: WebGL2RenderingContext;
-  program: WebGLProgram;
   loaders: Record<string, Loader>;
   tiles: Record<string, Tile>;
+  maxDataLevel: number;
+
+  gl: WebGL2RenderingContext;
+  program: WebGLProgram;
 
   scaleLoc: WebGLUniformLocation;
   shiftXLoc: WebGLUniformLocation;
@@ -157,6 +161,7 @@ class ZarrLayer {
       "v2",
       this.variable,
     );
+    this.maxDataLevel = Math.max(...levels);
     levels.forEach((z: number) => {
       const loader = loaders[z + "/" + this.variable];
       this.loaders[z] = loader;
@@ -172,6 +177,30 @@ class ZarrLayer {
         });
       });
     });
+  }
+
+  async getTileValue(lng: number, lat: number, x: number, y: number) {
+    const zoom = this.maxDataLevel;
+    const tileTuple: TileTuple = [
+      zoom,
+      lon2tile(lng, zoom),
+      lat2tile(lat, zoom),
+    ];
+    const tileKey = tileToKey(tileTuple);
+    const tile = this.tiles[tileKey];
+    if (tile) {
+      const [_, shiftX, shiftY] = tileToScale(tileTuple);
+      const [xLocal, yLocal] = [x - shiftX, y - shiftY];
+      const data = await tile.fetchData();
+      const [xIndex, yIndex] = [
+        Math.round(xLocal * WIDTH * 2 ** zoom),
+        Math.round(yLocal * HEIGHT * 2 ** zoom),
+      ];
+      const index = yIndex * WIDTH + xIndex;
+      const val = data[index];
+      return val;
+    }
+    return -1;
   }
 
   async onAdd(_map: Map, gl: WebGL2RenderingContext) {
@@ -255,9 +284,9 @@ class ZarrLayer {
     // and all sorts of weird stuff happens
     this.prefetchTileData();
 
-    for (const tiletuple of tiles) {
-      const tilekey = tileToKey(tiletuple);
-      const tile = this.tiles[tilekey];
+    for (const tileTuple of tiles) {
+      const tileKey = tileToKey(tileTuple);
+      const tile = this.tiles[tileKey];
       if (!tile) return;
 
       // We don't await this, and just hope it finishes loading
@@ -269,7 +298,7 @@ class ZarrLayer {
       // These are used to scale and shift the this.bufferData
       // coordinates from covering the whole canvas to just the part
       // that the tile covers
-      const [scale, shiftX, shiftY] = tileToScale(tiletuple);
+      const [scale, shiftX, shiftY] = tileToScale(tileTuple);
       gl.uniform1f(this.scaleLoc, scale);
       gl.uniform1f(this.shiftXLoc, shiftX);
       gl.uniform1f(this.shiftYLoc, shiftY);
