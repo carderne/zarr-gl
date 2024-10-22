@@ -1,6 +1,6 @@
 {
   "name": "zarr-gl",
-  "version": "0.1.4",
+  "version": "0.1.5",
   "description": "Custom WebGL Zarr layer for Mapbox and Maplibre",
   "type": "module",
   "main": "dist/index.js",
