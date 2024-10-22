@@ -39,30 +39,40 @@ const Index = () => {
           variable={variable}
         />
       </Mapbox>
-      <div className="fixed left-5 top-5 flex max-w-xs flex-col space-y-4">
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="text-2xl">Nice Days</CardTitle>
-          </CardHeader>
-          <CardContent>
+      <div className="fixed bottom-2 left-2 p-0 md:bottom-auto md:left-auto md:right-5 md:top-5">
+        <Card className="flex-grow">
+          <CardContent className="p-2 md:p-4">
             <p>
-              How many are there where you live? A little demo of{" "}
               <a
                 className="underline hover:bg-fuchsia-200"
                 href="https://github.com/carderne/zarr-gl"
               >
-                zarr-gl.
+                made with zarr-gl
               </a>
             </p>
           </CardContent>
         </Card>
-        <Card>
-          <CardContent className="flex flex-col space-y-4 p-6">
+      </div>
+      <div className="fixed flex w-screen flex-row space-x-2 p-2 md:left-5 md:top-5 md:max-w-xs md:flex-col md:space-x-0 md:space-y-4 md:p-0">
+        <Card className="flex-grow">
+          <CardHeader className="p-2 md:p-4 md:pb-2">
+            <CardTitle className="text-center text-2xl">Nice Days</CardTitle>
+          </CardHeader>
+          <CardContent className="p-2 md:p-4 md:pt-0">
+            <p>How many are there where you live?</p>
+          </CardContent>
+        </Card>
+        <Card className="max-w-48 md:max-w-none">
+          <CardContent className="flex flex-col space-y-4 p-2 md:p-4 md:py-4">
             <Select defaultValue={variable} onValueChange={setVariable}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
+                <SelectItem value="num_all">
+                  <div>Great Days</div>
+                  <div className="text-xs">Perfect days meeting all the below criteria!</div>
+                </SelectItem>
                 <SelectItem value="num_wind">
                   <div>Calm Days</div>
                   <div className="text-xs">Days where the wind never goes over 19 knots</div>
@@ -76,10 +86,6 @@ const Index = () => {
                   <div className="text-xs">
                     Days where the max temperature is between 16 and 27 °C
                   </div>
-                </SelectItem>
-                <SelectItem value="num_all">
-                  <div>Calm, Dry, Warm Days</div>
-                  <div className="text-xs">Perfect days meeting all the above criteria!</div>
                 </SelectItem>
               </SelectContent>
             </Select>
