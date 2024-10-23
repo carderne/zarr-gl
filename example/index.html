@@ -15,7 +15,7 @@
 <body>
 <div id="map"></div>
 <script type="module">
-import zarrgl from "https://cdn.jsdelivr.net/npm/zarr-gl@0.1.5/+esm";
+import { ZarrLayer } from "https://cdn.jsdelivr.net/npm/zarr-gl@0.1.7/+esm";
 const map = new maplibregl.Map({
   container: "map",
   style: "https://demotiles.maplibre.org/style.json",
@@ -23,12 +23,12 @@ const map = new maplibregl.Map({
   zoom: 3,
   renderWorldCopies: false,
 });
-const id = "fake";
-const layer = new zarrgl.ZarrLayer({
+const source = window.location.origin + "/example.zarr/";
+const layer = new ZarrLayer({
   map,
   id: "my-layer",
-  source: "/example.zarr",
-  variable: "fake",
+  source,
+  variable: "my_array",
   colormap: [[200, 10, 50], [30, 40, 30], [50, 10, 200]],
   vmin: 20,
   vmax: 300,

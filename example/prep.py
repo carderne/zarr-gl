@@ -9,11 +9,11 @@ da = xr.DataArray(
     data=np.ones((len(y), len(x))),
     coords={"y": y, "x": x},
     dims=["y", "x"],
-    name="fake",
+    name="my_array",
 )
 da = da * (np.abs(da.y) + np.abs(da.x) + 1)
 
-ds = xr.Dataset({"fake": da})
+ds = xr.Dataset({"my_array": da})
 ds = ds.rio.write_crs("EPSG:4326")
 
 pyramids = pyramid_reproject(ds, levels=6, resampling="bilinear")

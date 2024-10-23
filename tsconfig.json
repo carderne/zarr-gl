@@ -5,7 +5,7 @@
   "compilerOptions": {
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "target": "es2022",
+    "target": "ESNext",
     "allowJs": true,
     "resolveJsonModule": true,
     "moduleDetection": "force",
@@ -15,7 +15,7 @@
     "forceConsistentCasingInFileNames": true,
     "noUncheckedIndexedAccess": true,
     "noImplicitOverride": true,
-    "module": "esnext",
+    "module": "ESNext",
     "moduleResolution": "node",
     "declarationDir": "./dist",
     "outDir": "./dist",
