@@ -1,0 +1,3 @@
+*.zarr
+.venv
+.ipynb_checkpoints

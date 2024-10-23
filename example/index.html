@@ -1,0 +1,43 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <title>zarr-gl basic example</title>
+  <meta property="og:description" content="Basic no-build zarr-gl example" />
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.css" />
+  <script src="https://unpkg.com/maplibre-gl@4.7.1/dist/maplibre-gl.js"></script>
+  <style>
+    body { margin: 0; padding: 0; }
+    html, body, #map { height: 100%; }
+  </style>
+</head>
+<body>
+<div id="map"></div>
+<script type="module">
+import zarrgl from "https://cdn.jsdelivr.net/npm/zarr-gl@0.1.5/+esm";
+const map = new maplibregl.Map({
+  container: "map",
+  style: "https://demotiles.maplibre.org/style.json",
+  center: [0, 0],
+  zoom: 3,
+  renderWorldCopies: false,
+});
+const id = "fake";
+const layer = new zarrgl.ZarrLayer({
+  map,
+  id: "my-layer",
+  source: "/example.zarr",
+  variable: "fake",
+  colormap: [[200, 10, 50], [30, 40, 30], [50, 10, 200]],
+  vmin: 20,
+  vmax: 300,
+  opacity: 0.8,
+  invalidate: () => map.triggerRepaint(),
+});
+map.on("load", () => {
+  map.addLayer(layer);
+});
+</script>
+</body>
+</html>

@@ -1,0 +1,18 @@
+[project]
+name = "zarr-gl-example"
+version = "0.1.0"
+description = "Basic zarr-gl data generation and visualisation example"
+readme = "README.md"
+requires-python = ">=3.12"
+
+dependencies = [
+    "dask>=2024.10.0",
+    "jupyterlab>=4.2.5",
+    "matplotlib>=3.9.2",
+    "ndpyramid>=0.3.0",
+    "numpy>=2.1.2",
+    "rasterio>=1.4.1",
+    "rioxarray>=0.17.0",
+    "xarray>=2024.9.0",
+    "zarr>=2.18.3",
+]
