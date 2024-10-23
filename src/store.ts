@@ -1,37 +1,31 @@
-import zarr from "zarr-js";
-import type { Loader, Metadata } from "zarr-js";
+import * as zarr from "zarrita";
 
-const zarrLoad = async (source: string, version: "v2", variable: string) => {
-  const [loaders, metadata] = await new Promise<
-    [Record<string, Loader>, Metadata]
-  >((resolve, reject) => {
-    zarr(window.fetch, version).openGroup(
-      source,
-      (err: Error, l: Record<string, Loader>, m: Metadata) => {
-        if (err) reject(err);
-        else resolve([l, m]);
-      },
-    );
-  });
+export interface Multiscale {
+  datasets: { path: string; pixels_per_tile: number; crs: string }[];
+}
 
-  const zattrs = metadata.metadata[".zattrs"];
-  if (!zattrs) {
-    throw new Error(`Failed to load .zattrs for ${source}`);
+// ChunkTuple goes [Y, X]
+export type ChunkTuple = [number, number];
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+export type ZArray = zarr.Array<zarr.DataType, any>;
+
+const zarrLoad = async (source: string) => {
+  const store = new zarr.FetchStore(source);
+  const group = await zarr.open(store, { kind: "group" });
+
+  const zattrs = group.attrs;
+  const multiscales = zattrs.multiscales as Multiscale[] | undefined;
+  if (!multiscales) {
+    throw new Error(`Failed to find multiscales in attrs for ${source}`);
   }
-  const multiscales = zattrs.multiscales;
   const datasets = multiscales[0]?.datasets;
   if (!datasets) {
-    throw new Error(`Failed to load .zattrs for ${source}`);
+    throw new Error(`Failed to find datasets in attrs for ${source}`);
   }
   const levels = datasets.map((dataset) => Number(dataset.path));
-  const zarrayPath = `${levels[0]}/${variable}/.zarray`;
-  const zarray = metadata.metadata[zarrayPath];
-  if (!zarray) {
-    throw new Error(`Failed to load .zarray for ${source} and ${zarrayPath}`);
-  }
-  const chunks = zarray.chunks;
 
-  return { loaders, chunks, levels };
+  return { group, levels };
 };
 
 export default zarrLoad;

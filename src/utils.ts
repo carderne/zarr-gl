@@ -18,9 +18,9 @@ export function lat2tile(lat: number, zoom: number): number {
 
 export const getTilesAtZoom = (
   zoom: number,
-  bounds: mapboxgl.LngLatBounds,
+  bounds: [[number, number], [number, number]],
 ): TileTuple[] => {
-  const [[west, south], [east, north]] = bounds.toArray();
+  const [[west, south], [east, north]] = bounds;
   const nwX = lon2tile(west, zoom);
   const seX = lon2tile(east, zoom);
   const nwY = lat2tile(north, zoom);
