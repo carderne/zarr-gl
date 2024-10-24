@@ -57,10 +57,11 @@ const Index = () => {
       <div className="fixed flex w-screen flex-row space-x-2 p-2 md:left-5 md:top-5 md:max-w-xs md:flex-col md:space-x-0 md:space-y-4 md:p-0">
         <Card className="flex-grow">
           <CardHeader className="p-2 md:p-4 md:pb-2">
-            <CardTitle className="text-center text-2xl">Nice Days</CardTitle>
+            <CardTitle className="text-center text-2xl">Bit Rainy?</CardTitle>
           </CardHeader>
           <CardContent className="p-2 md:p-4 md:pt-0">
-            <p>How many are there where you live?</p>
+            <p>Find somewhere better!</p>
+            <p>Click/tap the map for precise numbers.</p>
           </CardContent>
         </Card>
         <Card className="max-w-48 md:max-w-none">

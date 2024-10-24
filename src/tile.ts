@@ -4,15 +4,15 @@ import { mustCreateBuffer, mustCreateTexture, timeout } from "./utils";
 interface TileProps {
   chunk: ChunkTuple;
   loader: Loader;
-  gl: WebGL2RenderingContext;
+  gl: WebGL2RenderingContext | false;
 }
 
 class Tile {
   chunk: ChunkTuple;
   loader: Loader;
-  data: Float32Array | null;
+  data: Float32Array | null = null;
 
-  loading: boolean;
+  loading: boolean = false;
 
   tileTexture: WebGLTexture;
   vertexBuffer: WebGLBuffer;
@@ -20,14 +20,16 @@ class Tile {
 
   constructor({ chunk, loader, gl }: TileProps) {
     this.chunk = chunk;
-    this.data = null;
     this.loader = loader;
 
-    this.loading = false;
-
-    this.tileTexture = mustCreateTexture(gl);
-    this.vertexBuffer = mustCreateBuffer(gl);
-    this.pixCoordBuffer = mustCreateBuffer(gl);
+    if (gl) {
+      // Maybe a bad idea supporting this?
+      // Allows tiles to be used for data fetching but not WebGL
+      // Should probably add a separate API for this...
+      this.tileTexture = mustCreateTexture(gl);
+      this.vertexBuffer = mustCreateBuffer(gl);
+      this.pixCoordBuffer = mustCreateBuffer(gl);
+    }
   }
 
   async fetchData(): Promise<Float32Array> {

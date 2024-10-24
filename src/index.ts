@@ -162,7 +162,8 @@ export class ZarrLayer {
     return tiles;
   }
 
-  async prepareTiles() {
+  async prepareTiles(usegl: boolean = true) {
+    const gl = usegl ? this.gl : false;
     const { loaders, levels, maxZoom, shape, fillValue } = await zarrLoad(
       this.zarrSource,
       this.variable,
@@ -182,11 +183,7 @@ export class ZarrLayer {
         Array.from({ length: Math.pow(2, z) }, (_, y) => {
           const key = [z, x, y].join(",");
           const chunk: ChunkTuple = [y, x]; // NOTE: chunks go [Y, X]
-          this.tiles[key] = new Tile({
-            chunk,
-            loader,
-            gl: this.gl,
-          });
+          this.tiles[key] = new Tile({ chunk, loader, gl });
         });
       });
     });

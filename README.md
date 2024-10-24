@@ -1,7 +1,5 @@
 # zarr-gl
 
-**WORK IN PROGRESS**
-
 Custom WebGL Zarr layer for Mapbox and Maplibre.
 
 This library allows you to load [Zarr](https://zarr.dev/) data into a [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/guides/) or [Maplibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) map.
@@ -30,7 +28,7 @@ const layer = new ZarrLayer({
   id: "myZarrLayer",
   source: "https://example.com/path/to/my.zarr",
   variable: "precip",
-  colormap,
+  colormap: [[200, 10, 50], [30, 40, 30], [50, 10, 200]],
   clim: [0, 100],
   opacity: 0.8,
   map,

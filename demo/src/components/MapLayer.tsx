@@ -5,7 +5,7 @@ import { ZarrLayer } from "zarr-gl";
 
 import { useMapbox } from "@/hooks/use-mapbox";
 import { type RGB } from "@/lib/colormap";
-import Marker from "./Marker";
+import Marker, { MarkerLine } from "./Marker";
 
 interface MapLayerProps {
   id: string;
@@ -17,6 +17,13 @@ interface MapLayerProps {
   vmax: number;
   opacity?: number;
   display?: boolean;
+}
+
+interface HiddenLayers {
+  wind: ZarrLayer;
+  rain: ZarrLayer;
+  temp: ZarrLayer;
+  all: ZarrLayer;
 }
 
 const MapLayer = ({
@@ -31,6 +38,7 @@ const MapLayer = ({
 }: MapLayerProps) => {
   const { map, ready } = useMapbox();
   const [layer, setLayer] = useState<ZarrLayer>();
+  const [hid, setHid] = useState<HiddenLayers>();
   const [loaded, setLoaded] = useState(false);
 
   const handleMapClick = useCallback(
@@ -40,30 +48,32 @@ const MapLayer = ({
         return; // Exit early if we clicked on a marker
       }
 
-      if (!map || !layer) return;
-
+      if (!map || !hid) return;
       const point = mapboxgl.MercatorCoordinate.fromLngLat(e.lngLat);
-      const val = await layer.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
 
-      const label =
-        {
-          num_wind: "calm",
-          num_rain: "dry",
-          num_temp: "warm",
-          num_all: "great",
-        }[variable] || "";
+      const windVal = await hid.wind.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
+      const rainVal = await hid.rain.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
+      const tempVal = await hid.temp.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
+      const allVal = await hid.all.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
 
       const { lng, lat } = e.lngLat;
       const container = document.createElement("div");
       const root = createRoot(container);
       const marker = new mapboxgl.Marker(container);
 
-      const el = <Marker marker={marker} val={val} label={label} />;
+      const el = (
+        <Marker marker={marker}>
+          <MarkerLine val={allVal} label="great" />
+          <MarkerLine val={windVal} label="calm" />
+          <MarkerLine val={rainVal} label="dry" />
+          <MarkerLine val={tempVal} label="warm" />
+        </Marker>
+      );
 
       root.render(el);
       marker.setLngLat({ lng, lat }).addTo(map);
     },
-    [map, layer, variable],
+    [map, hid],
   );
 
   useEffect(() => {
@@ -72,12 +82,24 @@ const MapLayer = ({
         console.warn("Layer already added:", id);
         return;
       }
+      const basicProps = { map, source, version, colormap, vmin, vmax, opacity };
+      const hidden: HiddenLayers = {
+        wind: new ZarrLayer({ id: "zarr-wind", variable: "num_wind", ...basicProps }),
+        rain: new ZarrLayer({ id: "zarr-rain", variable: "num_rain", ...basicProps }),
+        temp: new ZarrLayer({ id: "zarr-temp", variable: "num_temp", ...basicProps }),
+        all: new ZarrLayer({ id: "zarr-great", variable: "num_all", ...basicProps }),
+      };
+      hidden.wind.prepareTiles(false);
+      hidden.rain.prepareTiles(false);
+      hidden.temp.prepareTiles(false);
+      hidden.all.prepareTiles(false);
+      setHid(hidden);
       const zarrLayer = new ZarrLayer({
-        map,
         id,
         source,
         version,
         variable,
+        map,
         colormap,
         vmin,
         vmax,
