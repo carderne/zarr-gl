@@ -31,12 +31,13 @@ const Index = () => {
       >
         <MapLayer
           id="weather"
+          source={SOURCE}
+          version="v2"
+          variable={variable}
           colormap={colormap}
           vmin={vmin}
           vmax={vmax}
           opacity={opacity / 100}
-          source={SOURCE}
-          variable={variable}
         />
       </Mapbox>
       <div className="fixed bottom-2 left-2 p-0 md:bottom-auto md:left-auto md:right-5 md:top-5">

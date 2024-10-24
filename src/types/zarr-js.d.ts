@@ -19,13 +19,17 @@ declare module "zarr-js" {
 
   export interface Zarray {
     chunks: number[][];
+    shape: [number, number];
+    chunks: [number, number][];
+    fill_value: number;
+    dtype: string;
   }
 
   export interface Metadata {
     metadata: Record<string, Zarray & { multiscales: Multiscale[] }>;
   }
 
-  export interface ZarrGroup {
+  export interface ZarrGroupV2 {
     openGroup(
       source: string,
       callback: (
@@ -36,8 +40,16 @@ declare module "zarr-js" {
     ): void;
   }
 
-  export default function zarr(
-    fetch: typeof window.fetch,
-    version: string,
-  ): ZarrGroup;
+  export interface ZarrGroupV3 {
+    open(
+      source: string,
+      callback: (
+        err: Error,
+        get: Loader,
+      ) => void,
+    ): void;
+  }
+
+  export default function zarr(fetch: typeof window.fetch, version: "v2"): ZarrGroupV2;
+  export default function zarr(fetch: typeof window.fetch, version: "v3"): ZarrGroupV3;
 }

@@ -11,6 +11,7 @@ interface MapLayerProps {
   id: string;
   source: string;
   variable: string;
+  version: "v2" | "v3";
   colormap: RGB[];
   vmin: number;
   vmax: number;
@@ -18,7 +19,16 @@ interface MapLayerProps {
   display?: boolean;
 }
 
-const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }: MapLayerProps) => {
+const MapLayer = ({
+  id,
+  source,
+  version,
+  variable,
+  colormap,
+  vmin,
+  vmax,
+  opacity = 0.8,
+}: MapLayerProps) => {
   const { map, ready } = useMapbox();
   const [layer, setLayer] = useState<ZarrLayer>();
   const [loaded, setLoaded] = useState(false);
@@ -66,6 +76,7 @@ const MapLayer = ({ id, source, variable, colormap, vmin, vmax, opacity = 0.8 }:
         map,
         id,
         source,
+        version,
         variable,
         colormap,
         vmin,

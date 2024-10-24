@@ -23,11 +23,10 @@ const map = new maplibregl.Map({
   zoom: 3,
   renderWorldCopies: false,
 });
-const source = window.location.origin + "/example.zarr/";
 const layer = new ZarrLayer({
   map,
   id: "my-layer",
-  source,
+  source: "./example.zarr",
   variable: "my_array",
   colormap: [[200, 10, 50], [30, 40, 30], [50, 10, 200]],
   vmin: 20,
