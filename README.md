@@ -8,7 +8,7 @@ Takes inspiration from [carbonplan/maps](https://github.com/carbonplan/maps), bu
 1. A library, rather than a framework, so you can use it how you like.
 2. Adds a [Custom Layer](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) to Mapbox's GL context, rather than creating a whole separate one. Allows you to mix and match with Map styles, adjust layer ordering etc.
 
-You can see a demo at: [zarrgl.rdrn.me](http://zarrgl.rdrn.me).
+You can see a demo at: [rainy.rdrn.me](http://rainy.rdrn.me).
 
 ## Quickstart
 ```bash
@@ -38,4 +38,4 @@ map.addLayer(layer);
 
 ## Examples
 1. There is a very basic example (including data prep) in the [example](./example) directory.
-2. There's also a more complex React app inside [demo](./demo) and viewable at [zarrgl.rdrn.me](http://zarrgl.rdrn.me).
+2. There's also a more complex React app inside [demo](./demo) and viewable at [rainy.rdrn.me](http://rainy.rdrn.me).
