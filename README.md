@@ -4,13 +4,13 @@
 
 Custom WebGL Zarr layer for Mapbox and Maplibre.
 
-Uses [zarr-js](https://github.com/freeman-lab/zarr-js) to load [Zarr](https://zarr.dev/) data into a [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/guides/) or [Maplibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) map.
+This library allows you to load [Zarr](https://zarr.dev/) data into a [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/guides/) or [Maplibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) map.
 
 Takes inspiration from [carbonplan/maps](https://github.com/carbonplan/maps), but with two differences:
-1. A library, rather than a framework.
-2. Adds a [Custom Layer](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) to Mapbox's GL context, rather than creating a whole separate one.
+1. A library, rather than a framework, so you can use it how you like.
+2. Adds a [Custom Layer](https://docs.mapbox.com/mapbox-gl-js/api/properties/#customlayerinterface) to Mapbox's GL context, rather than creating a whole separate one. Allows you to mix and match with Map styles, adjust layer ordering etc.
 
-You can see a demo at: https://zarrgl.rdrn.me
+You can see a demo at: [zarrgl.rdrn.me](http://zarrgl.rdrn.me).
 
 ## Quickstart
 ```bash
@@ -18,7 +18,7 @@ npm install zarr-gl
 ```
 
 ```js
-import zarrgl from "zarr-gl";
+import { ZarrLayer } from "zarr-gl";
 
 const map = new mapboxgl.Map({
   container: "map",
@@ -26,7 +26,7 @@ const map = new mapboxgl.Map({
   projection: "mercator",
 });
 
-const layer = new zarrgl.ZarrLayer({
+const layer = new ZarrLayer({
   id: "myZarrLayer",
   source: "https://example.com/path/to/my.zarr",
   variable: "precip",
@@ -38,4 +38,6 @@ const layer = new zarrgl.ZarrLayer({
 map.addLayer(layer);
 ```
 
-You can see a full example in the [./demo](./demo) subdirectory.
+## Examples
+1. There is a very basic example (including data prep) in the [example](./example) directory.
+2. There's also a more complex React app inside [demo](./demo) and viewable at [zarrgl.rdrn.me](http://zarrgl.rdrn.me).

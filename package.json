@@ -3,7 +3,6 @@
   "version": "0.1.7",
   "description": "Custom WebGL Zarr layer for Mapbox and Maplibre",
   "type": "module",
-  "source": "src/index.ts",
   "main": "dist/zarr-gl.js",
   "module": "dist/zarr-gl.js",
   "types": "dist/index.d.ts",
@@ -17,8 +16,8 @@
     "fmt": "prettier --write src/*.ts",
     "lint": "eslint src/*.ts",
     "check": "tsc --noEmit",
-    "dev": "microbundle watch -f esm --external none",
-    "build": "microbundle -f esm --external none"
+    "dev": "webpack watch --mode development",
+    "build": "webpack --mode production"
   },
   "repository": {
     "type": "git",
@@ -30,6 +29,9 @@
     "url": "https://github.com/carderne/zarr-gl/issues"
   },
   "homepage": "https://github.com/carderne/zarr-gl",
+  "dependencies": {
+    "zarr-js": "^3.3.0"
+  },
   "devDependencies": {
     "@eslint/js": "^9.7.0",
     "@types/eslint__js": "^8.42.3",
@@ -39,13 +41,12 @@
     "eslint-config-prettier": "^9.1.0",
     "eslint-plugin-simple-import-sort": "^12.1.0",
     "mapbox-gl": "^3.7.0",
-    "microbundle": "^0.15.1",
     "prettier": "^3.3.3",
     "ts-loader": "^9.5.1",
     "typescript": "^5.6.3",
-    "typescript-eslint": "^8.11.0"
-  },
-  "dependencies": {
-    "zarrita": "^0.4.0-next.17"
+    "typescript-eslint": "^8.11.0",
+    "vitest": "^2.0.2",
+    "webpack": "^5.95.0",
+    "webpack-cli": "^5.1.4"
   }
 }

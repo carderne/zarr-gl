@@ -1,7 +1,4 @@
-import * as zarr from "zarrita";
-
-import { type Map } from "mapbox-gl";
-
+import type { Map } from "mapbox-gl";
 import {
   zoomToLevel,
   tileToScale,
@@ -15,9 +12,11 @@ import {
   mustGetUniformLocation,
   mustCreateTexture,
 } from "./utils";
+import type { ChunkTuple, Loader } from "zarr-js";
 import Tile from "./tile";
-import zarrLoad, { ZArray, type ChunkTuple } from "./store";
-import { vertexProgram, fragmentProgram } from "./shaders";
+import zarrLoad from "./store";
+import fragmentSource from "./shaders/frag.glsl";
+import vertexSource from "./shaders/vert.glsl";
 
 type RGB = [number, number, number];
 
@@ -55,7 +54,7 @@ export class ZarrLayer {
   opacity: number;
   minRenderZoom: number;
 
-  loaders: Record<string, ZArray>;
+  loaders: Record<string, Loader>;
   tiles: Record<string, Tile>;
   maxDataLevel: number;
 
@@ -161,19 +160,26 @@ export class ZarrLayer {
   }
 
   async prepareTiles() {
-    const { group, levels } = await zarrLoad(this.zarrSource);
+    const { loaders, levels } = await zarrLoad(
+      this.zarrSource,
+      "v2",
+      this.variable,
+    );
     this.maxDataLevel = Math.max(...levels);
-    levels.forEach(async (z: number) => {
-      const path = `${z}/${this.variable}`;
-      const arr = await zarr.open(group.resolve(path), { kind: "array" });
-      this.loaders[z] = arr;
+    levels.forEach((z: number) => {
+      const loaderKey = z + "/" + this.variable;
+      const loader = loaders[loaderKey];
+      if (!loader) {
+        throw new Error(`Failed to get loader for ${loaderKey}`);
+      }
+      this.loaders[z] = loader;
       Array.from({ length: Math.pow(2, z) }, (_, x) => {
         Array.from({ length: Math.pow(2, z) }, (_, y) => {
           const key = [z, x, y].join(",");
           const chunk: ChunkTuple = [y, x]; // NOTE: chunks go [Y, X]
           this.tiles[key] = new Tile({
             chunk,
-            arr,
+            loader,
             gl: this.gl,
           });
         });
@@ -205,19 +211,17 @@ export class ZarrLayer {
       ];
       const index = yIndex * WIDTH + xIndex;
       const val = data[index];
-      if (val) return val;
+      if (val) {
+        return val;
+      }
     }
     return -1;
   }
 
   async onAdd(_map: Map, gl: WebGL2RenderingContext) {
     this.gl = gl;
-    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexProgram);
-    const fragmentShader = createShader(
-      gl,
-      gl.FRAGMENT_SHADER,
-      fragmentProgram,
-    );
+    const vertexShader = createShader(gl, gl.VERTEX_SHADER, vertexSource);
+    const fragmentShader = createShader(gl, gl.FRAGMENT_SHADER, fragmentSource);
     this.program = createProgram(gl, vertexShader, fragmentShader);
 
     this.scaleLoc = mustGetUniformLocation(gl, this.program, "scale");

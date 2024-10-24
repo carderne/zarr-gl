@@ -1,15 +1,15 @@
-import type { ChunkTuple, ZArray } from "./store";
+import type { ChunkTuple, Data, Loader } from "zarr-js";
 import { mustCreateBuffer, mustCreateTexture, timeout } from "./utils";
 
 interface TileProps {
   chunk: ChunkTuple;
-  arr: ZArray;
+  loader: Loader;
   gl: WebGL2RenderingContext;
 }
 
 class Tile {
   chunk: ChunkTuple;
-  arr: ZArray;
+  loader: Loader;
   data: Float32Array | null;
 
   loading: boolean;
@@ -18,10 +18,10 @@ class Tile {
   vertexBuffer: WebGLBuffer;
   pixCoordBuffer: WebGLBuffer;
 
-  constructor({ chunk, arr, gl }: TileProps) {
+  constructor({ chunk, loader, gl }: TileProps) {
     this.chunk = chunk;
     this.data = null;
-    this.arr = arr;
+    this.loader = loader;
 
     this.loading = false;
 
@@ -38,11 +38,14 @@ class Tile {
       await timeout(500);
       return this.fetchData();
     }
-    this.loading = true;
-    const data = await this.arr.getChunk(this.chunk);
-    this.data = data.data as Float32Array;
-    this.loading = false;
-    return this.data;
+    return await new Promise<Float32Array>((resolve) => {
+      this.loading = true;
+      this.loader(this.chunk, (_: Error, data: Data) => {
+        this.loading = false;
+        this.data = data.data;
+        resolve(this.data);
+      });
+    });
   }
 }
 

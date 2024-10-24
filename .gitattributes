@@ -1,1 +1,2 @@
-demo/* -linguist-detectable
+demo/** -linguist-detectable
+example/** -linguist-detectable
