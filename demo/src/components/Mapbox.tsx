@@ -50,7 +50,7 @@ const Mapbox = ({
       touchZoomRotate: true,
     });
     mapRef.current.showTileBoundaries = debug;
-    mapRef.current.on("styledata", () => {
+    mapRef.current.on("load", () => {
       setReady(true);
     });
 
