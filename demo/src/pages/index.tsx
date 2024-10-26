@@ -15,14 +15,17 @@ const STYLE = "mapbox://styles/carderne/cm25xy9gj00g601pl3cpmhwhj?fresh=true";
 const ACCESS_TOKEN =
   "pk.eyJ1IjoiY2FyZGVybmUiLCJhIjoiY20yNGxpbnBsMGdxcTJqczZzZzB3YXdkZyJ9.tE9jMqijgw8GWYTvVQS4dQ";
 
+const titleMap = { num_wind: "Windy", num_rain: "Rainy", num_temp: "Cold", num_all: "Crap" };
+const emojiMap = { num_wind: "💨", num_rain: "☔️", num_temp: "🥶", num_all: "💩" };
+
 const Index = () => {
   const [opacity, setOpacity] = useState(80);
   const [[vmin, vmax], setVminVmax] = useState<[number, number]>([0, 365]);
   const [variable, setVariable] = useState("num_rain");
   const colormap = useColormap("warm", { count: 255, mode: "dark" });
 
-  const titleMap = { num_wind: "Windy", num_rain: "Rainy", num_temp: "Cold", num_all: "Crap" };
   const title = titleMap[variable as keyof typeof titleMap];
+  const emoji = emojiMap[variable as keyof typeof emojiMap];
 
   return (
     <div className="absolute h-screen w-screen">
@@ -49,7 +52,7 @@ const Index = () => {
         <Card className="flex-grow">
           <CardHeader className="p-2 md:p-4 md:pb-2">
             <CardTitle className="text-center text-2xl">
-              Bit <Highlight text={`${title}? ☔️`} color="#a6bddb" />
+              Bit <Highlight text={`${title}? ${emoji}`} color="#a6bddb" />
             </CardTitle>
           </CardHeader>
           <CardContent className="p-2 text-center md:p-4 md:pt-0">
