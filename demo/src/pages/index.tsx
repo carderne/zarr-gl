@@ -112,7 +112,7 @@ const Index = () => {
               />
             </div>
             <div className="flex flex-col">
-              Number of Days
+              Number of Days per Year
               <ColorSlider
                 value={[vmin, vmax]}
                 min={0}

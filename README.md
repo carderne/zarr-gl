@@ -15,8 +15,14 @@ You can see a demo at: [rainy.rdrn.me](http://rainy.rdrn.me).
 npm install zarr-gl
 ```
 
+You'll need to prepare the data using [carbonplan/ndpyramid](https://github.com/carbonplan/ndpyramid).
+Maybe one day this won't be necessary, but re-projecting arrays on the fly isn't cheap.
+There's a basic data preparation example at [example/prep.py](./example/prep.py).
+
 ```js
 import { ZarrLayer } from "zarr-gl";
+// or skip the npm install and just do this:
+// import { ZarrLayer } from "https://cdn.jsdelivr.net/npm/zarr-gl@0.2.0/+esm";
 
 const map = new mapboxgl.Map({
   container: "map",
@@ -29,13 +35,23 @@ const layer = new ZarrLayer({
   source: "https://example.com/path/to/my.zarr",
   variable: "precip",
   colormap: [[200, 10, 50], [30, 40, 30], [50, 10, 200]],
-  clim: [0, 100],
+  vmin: 0,
+  vmax: 100,
   opacity: 0.8,
   map,
 });
 map.addLayer(layer);
 ```
 
+## Roadmap
+- [ ] Support a `selector` option to index into additional dimensions. Currently only 2D datasets are supported.
+- [ ] How is non-float data currently treated?
+- [ ] Add more lifecycle events?
+
 ## Examples
 1. There is a very basic example (including data prep) in the [example](./example) directory.
 2. There's also a more complex React app inside [demo](./demo) and viewable at [rainy.rdrn.me](http://rainy.rdrn.me).
+
+## Contributing
+I'd love input on use-cases, ideas, missing features etc.
+Even better if they come with code.
