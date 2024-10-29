@@ -10,6 +10,9 @@ Takes inspiration from [carbonplan/maps](https://github.com/carbonplan/maps), bu
 
 You can see a demo at: [rainy.rdrn.me](http://rainy.rdrn.me).
 
+<img width="824" alt="image" src="https://github.com/user-attachments/assets/0414dcd2-2b1f-4e1a-aea8-a2b715fcab56">
+
+
 ## Quickstart
 ```bash
 npm install zarr-gl
