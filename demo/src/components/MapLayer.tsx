@@ -46,7 +46,7 @@ const MapLayer = ({
       const adjectives = {
         num_wind: "calm",
         num_rain: "dry",
-        num_warm: "warm",
+        num_temp: "warm",
         num_all: "great",
       };
       const num = await layer.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
