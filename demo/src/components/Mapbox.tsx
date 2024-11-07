@@ -43,7 +43,7 @@ const Mapbox = ({
       maxZoom,
       maxBounds,
       projection: "mercator",
-      hash: true,
+      hash: false,
       renderWorldCopies: false,
       dragRotate: false,
       pitchWithRotate: false,

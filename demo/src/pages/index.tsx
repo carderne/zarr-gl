@@ -15,17 +15,43 @@ const STYLE = "mapbox://styles/carderne/cm25xy9gj00g601pl3cpmhwhj?fresh=true";
 const ACCESS_TOKEN =
   "pk.eyJ1IjoiY2FyZGVybmUiLCJhIjoiY20yNGxpbnBsMGdxcTJqczZzZzB3YXdkZyJ9.tE9jMqijgw8GWYTvVQS4dQ";
 
-const titleMap = { num_wind: "Windy", num_rain: "Rainy", num_temp: "Cold", num_all: "Crap" };
-const emojiMap = { num_wind: "💨", num_rain: "☔️", num_temp: "🥶", num_all: "💩" };
+const variables = {
+  num_wind: {
+    title: "Windy",
+    emoji: "💨",
+    select: "Calm Days",
+    desc: "Days where the wind never goes over 19 knots",
+  },
+  num_rain: {
+    title: "Rainy",
+    emoji: "☔️",
+    select: "Dry Days",
+    desc: "Days with less than 1mm of rain",
+  },
+  num_temp: {
+    title: "Cold",
+    emoji: "🥶",
+    select: "Warm Days",
+    desc: "Days where the max temperature is between 16 and 27 °C",
+  },
+  num_all: {
+    title: "Crap",
+    emoji: "💩",
+    select: "Great Days",
+    desc: "Perfect days meeting all the below criteria!",
+  },
+};
+type Var = keyof typeof variables;
 
 const Index = () => {
   const [opacity, setOpacity] = useState(80);
   const [[vmin, vmax], setVminVmax] = useState<[number, number]>([0, 365]);
-  const [variable, setVariable] = useState("num_rain");
+  const [variable, setVariable] = useState<Var>("num_rain");
   const colormap = useColormap("warm", { count: 255, mode: "dark" });
 
-  const title = titleMap[variable as keyof typeof titleMap];
-  const emoji = emojiMap[variable as keyof typeof emojiMap];
+  const title = variables[variable].title;
+  const emoji = variables[variable].emoji;
+  const selectTitle = variables[variable].select;
 
   return (
     <div className="absolute h-screen w-screen">
@@ -76,29 +102,17 @@ const Index = () => {
         </Card>
         <Card className="max-w-48 md:max-w-none">
           <CardContent className="flex flex-col space-y-4 p-2 md:p-4 md:py-4">
-            <Select defaultValue={variable} onValueChange={setVariable}>
+            <Select defaultValue={variable} onValueChange={(value: Var) => setVariable(value)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value="num_all">
-                  <div>Great Days</div>
-                  <div className="text-xs">Perfect days meeting all the below criteria!</div>
-                </SelectItem>
-                <SelectItem value="num_wind">
-                  <div>Calm Days</div>
-                  <div className="text-xs">Days where the wind never goes over 19 knots</div>
-                </SelectItem>
-                <SelectItem value="num_rain">
-                  <div>Dry Days</div>
-                  <div className="text-xs">Days with less than 1mm of rain</div>
-                </SelectItem>
-                <SelectItem value="num_temp">
-                  <div>Warm Days</div>
-                  <div className="text-xs">
-                    Days where the max temperature is between 16 and 27 °C
-                  </div>
-                </SelectItem>
+                {Object.entries(variables).map(([key, val]) => (
+                  <SelectItem value={key} key={key}>
+                    <div>{val.select}</div>
+                    <div className="text-xs">{val.desc}</div>
+                  </SelectItem>
+                ))}
               </SelectContent>
             </Select>
             <div className="flex flex-col">
@@ -112,7 +126,7 @@ const Index = () => {
               />
             </div>
             <div className="flex flex-col">
-              Number of Days per Year
+              Number of {selectTitle} per Year
               <ColorSlider
                 value={[vmin, vmax]}
                 min={0}
