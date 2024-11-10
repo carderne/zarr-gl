@@ -6,11 +6,13 @@ import { ZarrLayer } from "zarr-gl";
 import { useMapbox } from "@/hooks/use-mapbox";
 import { type RGB } from "@/lib/colormap";
 import Marker from "./Marker";
+import { Variable, VARIABLES } from "@/lib/consts";
 
 interface MapLayerProps {
   id: string;
   source: string;
-  variable: string;
+  variable: Variable;
+  selector: Record<string, number>;
   version: "v2" | "v3";
   colormap: RGB[];
   vmin: number;
@@ -24,6 +26,7 @@ const MapLayer = ({
   source,
   version,
   variable,
+  selector,
   colormap,
   vmin,
   vmax,
@@ -43,14 +46,8 @@ const MapLayer = ({
       if (!map || !layer) return;
       const point = mapboxgl.MercatorCoordinate.fromLngLat(e.lngLat);
 
-      const adjectives = {
-        num_wind: "calm",
-        num_rain: "dry",
-        num_temp: "warm",
-        num_all: "great",
-      };
       const num = await layer.getTileValue(e.lngLat.lng, e.lngLat.lat, point.x, point.y);
-      const adj = adjectives[variable as keyof typeof adjectives];
+      const adj = VARIABLES[variable].adj;
 
       const { lng, lat } = e.lngLat;
       const container = document.createElement("div");
@@ -81,6 +78,7 @@ const MapLayer = ({
         vmin,
         vmax,
         opacity,
+        selector,
         invalidate: () => map.triggerRepaint(),
       });
       map.addLayer(zarrLayer, "building");
@@ -103,6 +101,12 @@ const MapLayer = ({
       layer.setOpacity(opacity);
     }
   }, [map, layer, opacity]);
+
+  useEffect(() => {
+    if (layer) {
+      layer.setSelector(selector);
+    }
+  }, [map, layer, selector]);
 
   useEffect(() => {
     if (layer) {

@@ -47,9 +47,10 @@ map.addLayer(layer);
 ```
 
 ## Roadmap
-- [ ] Support a `selector` option to index into additional dimensions. Currently only 2D datasets are supported.
-- [ ] How is non-float data currently treated?
-- [ ] Add more lifecycle events?
+- [x] Support a `selector` option to index into additional dimensions. Currently only 2D datasets are supported.
+- [ ] Handle chunk sizes other than 128x128.
+- [ ] Appropriately handle non-float32 data.
+- [ ] Add more lifecycle events.
 
 ## Examples
 1. There is a very basic example (including data prep) in the [example](./example) directory.

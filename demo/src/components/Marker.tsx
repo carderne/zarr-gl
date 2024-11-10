@@ -68,7 +68,7 @@ const Marker = ({
       <div className="relative flex flex-col rounded-lg bg-white bg-opacity-90 p-2 shadow-lg">
         <div className="mb-2 flex flex-col">
           <div className="m-auto text-xl">
-            {num} <Highlight text={adj} color="#ffdcac" /> days
+            {num.toFixed(0)} <Highlight text={adj} color="#ffdcac" /> days
           </div>
           <div className="text-md m-auto max-w-80">
             {chartIsVisible && place && place.length > 1 && <span>in {place}</span>}

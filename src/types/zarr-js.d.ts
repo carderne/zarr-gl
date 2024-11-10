@@ -1,16 +1,10 @@
 declare module "zarr-js" {
-  export interface Data {
-    data: Float32Array;
-    offset: number;
-    stride: [number, number];
-  }
-
-  // ChunkTuple goes [Y, X]
-  export type ChunkTuple = [number, number];
+  // ChunkTuple goes [Z, Y, X]
+  export type ChunkTuple = number[];
 
   export type Loader = (
     chunk: ChunkTuple,
-    callback: (err: Error, data: Data) => void,
+    callback: (err: Error, data: import("ndarray").NdArray) => void,
   ) => void;
 
   export interface Multiscale {
@@ -18,15 +12,18 @@ declare module "zarr-js" {
   }
 
   export interface Zarray {
-    chunks: number[][];
-    shape: [number, number];
-    chunks: [number, number][];
+    shape: number[];
+    chunks: number[];
     fill_value: number;
     dtype: string;
   }
 
+  export interface Zattrs {
+    _ARRAY_DIMENSIONS: string[];
+  }
+
   export interface Metadata {
-    metadata: Record<string, Zarray & { multiscales: Multiscale[] }>;
+    metadata: Record<string, Zarray & Zattrs & { multiscales: Multiscale[] }>;
   }
 
   export interface ZarrGroupV2 {
@@ -41,15 +38,15 @@ declare module "zarr-js" {
   }
 
   export interface ZarrGroupV3 {
-    open(
-      source: string,
-      callback: (
-        err: Error,
-        get: Loader,
-      ) => void,
-    ): void;
+    open(source: string, callback: (err: Error, get: Loader) => void): void;
   }
 
-  export default function zarr(fetch: typeof window.fetch, version: "v2"): ZarrGroupV2;
-  export default function zarr(fetch: typeof window.fetch, version: "v3"): ZarrGroupV3;
+  export default function zarr(
+    fetch: typeof window.fetch,
+    version: "v2",
+  ): ZarrGroupV2;
+  export default function zarr(
+    fetch: typeof window.fetch,
+    version: "v3",
+  ): ZarrGroupV3;
 }

@@ -9,49 +9,20 @@ import { Slider } from "@/ui/slider";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/ui/select";
 import { Popover, PopoverContent, PopoverTrigger } from "@/ui/popover";
 import Highlight from "@/ui/Highlight";
+import { ACCESS_TOKEN, SOURCE, STYLE, Variable, VARIABLES } from "@/lib/consts";
 
-const SOURCE = "https://weathermapdata.rdrn.me/era5_2020_num_l6.zarr";
-const STYLE = "mapbox://styles/carderne/cm25xy9gj00g601pl3cpmhwhj?fresh=true";
-const ACCESS_TOKEN =
-  "pk.eyJ1IjoiY2FyZGVybmUiLCJhIjoiY20yNGxpbnBsMGdxcTJqczZzZzB3YXdkZyJ9.tE9jMqijgw8GWYTvVQS4dQ";
-
-const variables = {
-  num_wind: {
-    title: "Windy",
-    emoji: "💨",
-    select: "Calm Days",
-    desc: "Days where the wind never goes over 19 knots",
-  },
-  num_rain: {
-    title: "Rainy",
-    emoji: "☔️",
-    select: "Dry Days",
-    desc: "Days with less than 1mm of rain",
-  },
-  num_temp: {
-    title: "Cold",
-    emoji: "🥶",
-    select: "Warm Days",
-    desc: "Days where the max temperature is between 16 and 27 °C",
-  },
-  num_all: {
-    title: "Crap",
-    emoji: "💩",
-    select: "Great Days",
-    desc: "Perfect days meeting all the below criteria!",
-  },
-};
-type Var = keyof typeof variables;
+const defaultVar = Object.keys(VARIABLES)[2] as Variable;
 
 const Index = () => {
   const [opacity, setOpacity] = useState(80);
+  const [year, setYear] = useState(2019);
   const [[vmin, vmax], setVminVmax] = useState<[number, number]>([0, 365]);
-  const [variable, setVariable] = useState<Var>("num_rain");
+  const [variable, setVariable] = useState<Variable>(defaultVar);
   const colormap = useColormap("warm", { count: 255, mode: "dark" });
 
-  const title = variables[variable].title;
-  const emoji = variables[variable].emoji;
-  const selectTitle = variables[variable].select;
+  const title = VARIABLES[variable].title;
+  const emoji = VARIABLES[variable].emoji;
+  const selectTitle = VARIABLES[variable].select;
 
   return (
     <div className="absolute h-screen w-screen">
@@ -68,6 +39,7 @@ const Index = () => {
           source={SOURCE}
           version="v2"
           variable={variable}
+          selector={{ year }}
           colormap={colormap}
           vmin={vmin}
           vmax={vmax}
@@ -102,12 +74,12 @@ const Index = () => {
         </Card>
         <Card className="max-w-48 md:max-w-none">
           <CardContent className="flex flex-col space-y-4 p-2 md:p-4 md:py-4">
-            <Select defaultValue={variable} onValueChange={(value: Var) => setVariable(value)}>
+            <Select defaultValue={variable} onValueChange={(value: Variable) => setVariable(value)}>
               <SelectTrigger className="w-full">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                {Object.entries(variables).map(([key, val]) => (
+                {Object.entries(VARIABLES).map(([key, val]) => (
                   <SelectItem value={key} key={key}>
                     <div>{val.select}</div>
                     <div className="text-xs">{val.desc}</div>
@@ -118,11 +90,23 @@ const Index = () => {
             <div className="flex flex-col">
               Opacity
               <Slider
+                gradient={true}
                 value={[opacity]}
                 min={0}
                 max={100}
                 step={1}
                 onValueChange={(vals) => setOpacity(vals[0])}
+              />
+            </div>
+            <div className="flex flex-col">
+              Year
+              <Slider
+                gradient={false}
+                value={[year]}
+                min={2015}
+                max={2020}
+                step={1}
+                onValueChange={(vals) => setYear(vals[0])}
               />
             </div>
             <div className="flex flex-col">

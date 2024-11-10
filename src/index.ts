@@ -20,12 +20,17 @@ import vertexSource from "./shaders/vert.glsl";
 
 type RGB = [number, number, number];
 
+// TODO handle different tile/chunk shapes
+const TILE_WIDTH = 128;
+const TILE_HEIGHT = 128;
+
 export interface ZarrLayerProps {
   map: Map;
   id: string; // id for the layer, must be unique
   source: string; // Zarr source URL
   version: "v2" | "v3"; // Zarr version
   variable: string; // Zarr variable to display
+  selector: Record<string, number>; // index into dimensions
   colormap: RGB[]; // array of RGB triplets in 0-255
   vmin: number; // lower bound for colormap
   vmax: number; // upper bound for colormap
@@ -43,6 +48,7 @@ export class ZarrLayer {
   zarrSource: string;
   zarrVersion: "v2" | "v3";
   variable: string;
+  selector: Record<string, number>;
   invalidate: () => void;
 
   cmapLength: number;
@@ -56,10 +62,8 @@ export class ZarrLayer {
   tiles: Record<string, Tile>;
   maxZoom: number;
   fillValue: number;
-  tileWidth: number;
-  tileHeight: number;
 
-  gl: WebGL2RenderingContext;
+  gl: WebGL2RenderingContext | undefined;
   program: WebGLProgram;
 
   scaleLoc: WebGLUniformLocation;
@@ -87,6 +91,7 @@ export class ZarrLayer {
     source,
     version,
     variable,
+    selector,
     map,
     colormap,
     vmin,
@@ -102,6 +107,8 @@ export class ZarrLayer {
     this.zarrSource = source;
     this.zarrVersion = version;
     this.variable = variable;
+    this.selector = selector ?? {};
+
     this.invalidate = invalidate;
 
     this.cmap = new Float32Array(colormap.flat().map((v) => v / 255.0));
@@ -137,6 +144,15 @@ export class ZarrLayer {
     this.invalidate();
   }
 
+  async setSelector(selector: Record<string, number>) {
+    this.selector = selector;
+    this.tiles = {};
+    await this.prepareTiles();
+    this.getVisibleTiles();
+    await this.prefetchTileData();
+    this.invalidate();
+  }
+
   async prefetchTileData() {
     const tiles = this.getVisibleTiles();
     for (const tiletuple of tiles) {
@@ -149,7 +165,7 @@ export class ZarrLayer {
   }
 
   getVisibleTiles(): TileTuple[] {
-    const zoom = zoomToLevel(this.map.getZoom(), 5);
+    const zoom = zoomToLevel(this.map.getZoom(), 4); // TODO use max zoom level from Zarr
 
     // If we don't have a loader for this zoom level just give up...
     if (!this.loaders[zoom]) return [];
@@ -162,16 +178,26 @@ export class ZarrLayer {
     return tiles;
   }
 
-  async prepareTiles(usegl: boolean = true) {
-    const gl = usegl ? this.gl : false;
-    const { loaders, levels, maxZoom, shape, fillValue } = await zarrLoad(
-      this.zarrSource,
-      this.variable,
-      this.zarrVersion,
-    );
+  async prepareTiles() {
+    if (typeof this.gl === "undefined") {
+      throw new Error("Cant prepareTiles with no GL context set");
+    }
+    const gl = this.gl;
+    const {
+      loaders,
+      dimensions,
+      dimArrs,
+      levels,
+      maxZoom,
+      shape,
+      chunks,
+      fillValue,
+    } = await zarrLoad(this.zarrSource, this.variable, this.zarrVersion);
+
+    // TODO check if selector references non-existent dimensions
+
     this.maxZoom = maxZoom;
     this.fillValue = fillValue;
-    [this.tileWidth, this.tileHeight] = shape;
     levels.forEach((z: number) => {
       const loaderKey = z + "/" + this.variable;
       const loader = loaders[loaderKey];
@@ -183,7 +209,20 @@ export class ZarrLayer {
         Array.from({ length: Math.pow(2, z) }, (_, y) => {
           const key = [z, x, y].join(",");
           const chunk: ChunkTuple = [y, x]; // NOTE: chunks go [Y, X]
-          this.tiles[key] = new Tile({ chunk, loader, gl });
+          // TODO most of these probably dont need to go into Tile
+          this.tiles[key] = new Tile({
+            chunk,
+            chunks,
+            loader,
+            gl,
+            dimensions,
+            dimArrs,
+            shape,
+            selector: this.selector,
+            z,
+            x,
+            y,
+          });
         });
       });
     });
@@ -208,10 +247,10 @@ export class ZarrLayer {
       const [xLocal, yLocal] = [x - shiftX, y - shiftY];
       const data = await tile.fetchData();
       const [xIndex, yIndex] = [
-        Math.round(xLocal * this.tileWidth * 2 ** zoom),
-        Math.round(yLocal * this.tileHeight * 2 ** zoom),
+        Math.round(xLocal * TILE_WIDTH * 2 ** zoom),
+        Math.round(yLocal * TILE_HEIGHT * 2 ** zoom),
       ];
-      const index = yIndex * this.tileWidth + xIndex;
+      const index = yIndex * TILE_WIDTH + xIndex;
       const val = data[index];
       if (val) {
         return val;
@@ -338,7 +377,7 @@ export class ZarrLayer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       // iOS Safari only supports RGB16F
       // prettier-ignore
-      gl.texImage2D( gl.TEXTURE_2D, 0, gl.R16F, this.tileWidth, this.tileHeight, 0, gl.RED, gl.FLOAT, tile.data);
+      gl.texImage2D( gl.TEXTURE_2D, 0, gl.R16F, TILE_WIDTH, TILE_HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
 
       // These are the vertex and pixCoord that were buffered+bound
       // further up. For some reason this has to happen _after_ the

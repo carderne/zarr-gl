@@ -17,7 +17,7 @@ const App = ({ Component, pageProps }: AppProps) => {
         <meta name="twitter:creator" content="@chrisarderne" />
         <meta name="twitter:title" content="Bit Rainy?" />
         <meta name="twitter:description" content="Find somewhere better!" />
-        <meta name="twitter:card"  content="summary_large_image" />
+        <meta name="twitter:card" content="summary_large_image" />
         <meta name="twitter:image" content="https://rainy.rdrn.me/rainy.png" />
 
         <meta property="og:image" content="https://rainy.rdrn.me/rainy.png" />

@@ -36,10 +36,10 @@ const ColorSlider = React.forwardRef<React.ElementRef<typeof SliderPrimitive.Roo
             style={{ background: gradientString }}
           />
         </SliderPrimitive.Track>
-        <SliderPrimitive.Thumb className="block inline-flex h-6 w-6 items-center justify-center rounded-full border border-primary/50 bg-background text-xs shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+        <SliderPrimitive.Thumb className="block inline-flex h-6 w-8 items-center justify-center rounded-full border border-primary/50 bg-background text-xs shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
           {props.value && props.value.length > 0 && props.value[0]}
         </SliderPrimitive.Thumb>
-        <SliderPrimitive.Thumb className="block inline-flex h-6 w-6 items-center justify-center rounded-full border border-primary/50 bg-background text-xs shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
+        <SliderPrimitive.Thumb className="block inline-flex h-6 w-8 items-center justify-center rounded-full border border-primary/50 bg-background text-xs shadow transition-colors focus-visible:outline-none focus-visible:ring-1 focus-visible:ring-ring disabled:pointer-events-none disabled:opacity-50">
           {props.value && props.value.length > 1 && props.value[1]}
         </SliderPrimitive.Thumb>
       </SliderPrimitive.Root>

@@ -1,3 +1,5 @@
+import { ChunkTuple } from "zarr-js";
+
 export type TileTuple = [number, number, number];
 
 export function lon2tile(lon: number, zoom: number): number {
@@ -128,4 +130,54 @@ export const mustCreateBuffer = (gl: WebGL2RenderingContext): WebGLBuffer => {
 
 export const timeout = (ms: number) => {
   return new Promise((resolve) => setTimeout(resolve, ms));
+};
+
+export const getChunks = ({
+  selector,
+  dimensions,
+  dimArrs,
+  shape,
+  chunks,
+  x,
+  y,
+}: {
+  selector: Record<string, number>;
+  dimensions: string[];
+  dimArrs: Record<string, number[]>;
+  shape: number[];
+  chunks: number[];
+  x: number;
+  y: number;
+}): ChunkTuple[] => {
+  return dimensions.reduce<ChunkTuple[]>(
+    (acc, dim, i) => {
+      if (["x", "lon"].includes(dim)) {
+        return acc.flatMap((a) => [[...a, x]]);
+      } else if (["y", "lat"].includes(dim)) {
+        return acc.flatMap((tuple) => [[...tuple, y]]);
+      }
+
+      const chunkSize = chunks[i];
+      const coords = dimArrs[dim];
+      if (typeof chunkSize === "undefined" || typeof coords === "undefined") {
+        throw new Error("Need at least 1D array");
+      }
+
+      const selectorValue = selector[dim];
+      const indices = Array.isArray(selectorValue)
+        ? selectorValue.map((v) => coords.indexOf(v))
+        : selectorValue !== undefined
+          ? [coords.indexOf(selectorValue)]
+          : Array.from({ length: shape[i]! }, (_, j) => j);
+
+      const uniqueChunkIndices = [
+        ...new Set(indices.map((index) => Math.floor(index / chunkSize))),
+      ];
+
+      return acc.flatMap((a) =>
+        uniqueChunkIndices.map((chunkIndex) => [...a, chunkIndex]),
+      );
+    },
+    [[]],
+  );
 };
