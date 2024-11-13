@@ -11,12 +11,16 @@ import {
   lon2tile,
   mustGetUniformLocation,
   mustCreateTexture,
+  mustCreateFramebuffer,
+  mustCreateBuffer,
 } from "./utils";
 import type { ChunkTuple, Loader } from "zarr-js";
 import Tile from "./tile";
 import zarrLoad from "./store";
 import fragmentSource from "./shaders/frag.glsl";
 import vertexSource from "./shaders/vert.glsl";
+import renderFragmentSource from "./shaders/renderFrag.glsl";
+import renderVertexSource from "./shaders/renderVert.glsl";
 
 type RGB = [number, number, number];
 
@@ -63,28 +67,47 @@ export class ZarrLayer {
   maxZoom: number;
   fillValue: number;
 
-  gl: WebGL2RenderingContext | undefined;
-  program: WebGLProgram;
+  private gl: WebGL2RenderingContext | undefined;
+  private program: WebGLProgram;
 
-  scaleLoc: WebGLUniformLocation;
-  shiftXLoc: WebGLUniformLocation;
-  shiftYLoc: WebGLUniformLocation;
-  matrixLoc: WebGLUniformLocation;
+  private scaleLoc: WebGLUniformLocation;
+  private shiftXLoc: WebGLUniformLocation;
+  private shiftYLoc: WebGLUniformLocation;
+  private matrixLoc: WebGLUniformLocation;
 
-  vminLoc: WebGLUniformLocation;
-  vmaxLoc: WebGLUniformLocation;
-  opacityLoc: WebGLUniformLocation;
-  noDataLoc: WebGLUniformLocation;
+  private vminLoc: WebGLUniformLocation;
+  private vmaxLoc: WebGLUniformLocation;
+  private opacityLoc: WebGLUniformLocation;
+  private noDataLoc: WebGLUniformLocation;
 
-  vertexLoc: number;
-  cmapTex: WebGLTexture;
-  cmapLoc: WebGLUniformLocation;
+  private vertexLoc: number;
+  private cmapTex: WebGLTexture;
+  private cmapLoc: WebGLUniformLocation;
 
-  vertexArr: Float32Array;
-  pixCoordArr: Float32Array;
+  private vertexArr: Float32Array;
+  private pixCoordArr: Float32Array;
 
-  texLoc: WebGLUniformLocation;
-  pixCoordLoc: GLint;
+  private texLoc: WebGLUniformLocation;
+  private pixCoordLoc: GLint;
+
+  private frameBuffers: {
+    current: {
+      framebuffer: WebGLFramebuffer;
+      texture: WebGLTexture;
+    } | null;
+    next: {
+      framebuffer: WebGLFramebuffer;
+      texture: WebGLTexture;
+    } | null;
+  };
+  private isUpdating: boolean;
+  private canvasWidth: number;
+  private canvasHeight: number;
+
+  private renderProgram: WebGLProgram;
+  private renderVertexLoc: number;
+  private renderTexLoc: WebGLUniformLocation;
+  private vertexBuffer: WebGLBuffer;
 
   constructor({
     id,
@@ -122,6 +145,11 @@ export class ZarrLayer {
 
     this.loaders = {};
     this.tiles = {};
+
+    this.frameBuffers = { current: null, next: null };
+    this.isUpdating = false;
+    this.canvasWidth = 512; // Default size, will be updated
+    this.canvasHeight = 512;
   }
 
   setOpacity(opacity: number) {
@@ -302,12 +330,84 @@ export class ZarrLayer {
       1.0, 1.0,
     ]);
 
+    this.canvasWidth = gl.canvas.width;
+    this.canvasHeight = gl.canvas.height;
+    this.frameBuffers.current = mustCreateFramebuffer(
+      gl,
+      this.canvasWidth,
+      this.canvasHeight,
+    );
+    this.frameBuffers.next = mustCreateFramebuffer(
+      gl,
+      this.canvasWidth,
+      this.canvasHeight,
+    );
+
     await this.prepareTiles();
+
+    this.vertexBuffer = mustCreateBuffer(gl);
+
+    const renderVertShader = createShader(
+      gl,
+      gl.VERTEX_SHADER,
+      renderVertexSource,
+    );
+
+    const renderFragShader = createShader(
+      gl,
+      gl.FRAGMENT_SHADER,
+      renderFragmentSource,
+    );
+
+    this.renderProgram = createProgram(gl, renderVertShader, renderFragShader);
+    this.renderVertexLoc = gl.getAttribLocation(this.renderProgram, "vertex");
+    this.renderTexLoc = mustGetUniformLocation(gl, this.renderProgram, "tex");
+
+    // Clean up shaders
+    gl.deleteShader(renderVertShader);
+    gl.deleteShader(renderFragShader);
   }
 
-  render(gl: WebGL2RenderingContext, matrix: number[]) {
-    // Call useProgram once right at the start
+  prerender(gl: WebGL2RenderingContext, matrix: number[]) {
+    if (this.isUpdating) return;
+
+    // Check if canvas size has changed
     gl.useProgram(this.program);
+    if (
+      gl.canvas.width !== this.canvasWidth ||
+      gl.canvas.height !== this.canvasHeight
+    ) {
+      this.canvasWidth = gl.canvas.width;
+      this.canvasHeight = gl.canvas.height;
+      this.frameBuffers.current = mustCreateFramebuffer(
+        gl,
+        this.canvasWidth,
+        this.canvasHeight,
+      );
+      this.frameBuffers.next = mustCreateFramebuffer(
+        gl,
+        this.canvasWidth,
+        this.canvasHeight,
+      );
+    }
+
+    // First copy the current framebuffer to the next one
+    // prettier-ignore
+    gl.bindFramebuffer(gl.DRAW_FRAMEBUFFER, this.frameBuffers.next!.framebuffer);
+    // prettier-ignore
+    gl.bindFramebuffer(gl.READ_FRAMEBUFFER, this.frameBuffers.current!.framebuffer);
+    // prettier-ignore
+    gl.blitFramebuffer(0, 0, this.canvasWidth, this.canvasHeight, 0, 0, this.canvasWidth, this.canvasHeight, gl.COLOR_BUFFER_BIT, gl.NEAREST);
+
+    // Render to the next buffer
+    gl.bindFramebuffer(gl.FRAMEBUFFER, this.frameBuffers.next!.framebuffer);
+    gl.viewport(0, 0, this.canvasWidth, this.canvasHeight);
+
+    // Call useProgram once right at the start
+    gl.clearColor(0, 0, 0, 0);
+    //gl.clear(gl.COLOR_BUFFER_BIT);
+    gl.enable(gl.BLEND);
+    gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
 
     // This is the colormap
     // First activate TEXTURE1, bind the unofirm, set the parameters
@@ -343,13 +443,13 @@ export class ZarrLayer {
     for (const tileTuple of tiles) {
       const tileKey = tileToKey(tileTuple);
       const tile = this.tiles[tileKey];
-      if (!tile) return;
+      if (!tile) continue;
 
       // We don't await this, and just hope it finishes loading
       // by the next time we come around??
       // This is because Mapbox/WebGL doesn't like it if we await here
       // and all sorts of weird stuff happens
-      if (!tile.data) return;
+      if (!tile.data) continue;
 
       // These are used to scale and shift the this.bufferData
       // coordinates from covering the whole canvas to just the part
@@ -377,7 +477,7 @@ export class ZarrLayer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
       // iOS Safari only supports RGB16F
       // prettier-ignore
-      gl.texImage2D( gl.TEXTURE_2D, 0, gl.R16F, TILE_WIDTH, TILE_HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, TILE_WIDTH, TILE_HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
 
       // These are the vertex and pixCoord that were buffered+bound
       // further up. For some reason this has to happen _after_ the
@@ -388,9 +488,40 @@ export class ZarrLayer {
       gl.vertexAttribPointer(this.pixCoordLoc, 2, gl.FLOAT, false, 0, 0);
 
       // Enable blending and draw the tile
-      gl.enable(gl.BLEND);
-      gl.blendFunc(gl.SRC_ALPHA, gl.ONE_MINUS_SRC_ALPHA);
       gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
     }
+
+    // Swap buffers
+    const temp = this.frameBuffers.current;
+    this.frameBuffers.current = this.frameBuffers.next;
+    this.frameBuffers.next = temp;
+
+    this.isUpdating = false;
+  }
+
+  render(gl: WebGL2RenderingContext, _matrix: number[]) {
+    if (!this.frameBuffers.current) return;
+
+    gl.bindFramebuffer(gl.FRAMEBUFFER, null);
+    gl.viewport(0, 0, this.canvasWidth, this.canvasHeight);
+
+    gl.useProgram(this.renderProgram);
+
+    // Bind the framebuffer texture
+    gl.activeTexture(gl.TEXTURE0);
+    gl.bindTexture(gl.TEXTURE_2D, this.frameBuffers.current.texture);
+    gl.uniform1i(this.renderTexLoc, 0);
+
+    // Set up vertices for a full-screen quad
+    gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
+    gl.bufferData(
+      gl.ARRAY_BUFFER,
+      new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]),
+      gl.STATIC_DRAW,
+    );
+    gl.enableVertexAttribArray(this.renderVertexLoc);
+    gl.vertexAttribPointer(this.renderVertexLoc, 2, gl.FLOAT, false, 0, 0);
+
+    gl.drawArrays(gl.TRIANGLE_STRIP, 0, 4);
   }
 }
