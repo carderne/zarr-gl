@@ -19,7 +19,7 @@ npm install zarr-gl
 ```
 
 You'll need to prepare the data using [carbonplan/ndpyramid](https://github.com/carbonplan/ndpyramid).
-Maybe one day this won't be necessary, but re-projecting arrays on the fly isn't cheap.
+Hoping to make that unnecessary at least for use-cases where a narrow zoom-range works.
 There's a basic data preparation example at [example/prep.py](./example/prep.py).
 
 ```js
@@ -48,6 +48,7 @@ map.addLayer(layer);
 
 ## Roadmap
 - [x] Support a `selector` option to index into additional dimensions. Currently only 2D datasets are supported.
+- [ ] Reproject from lon/lat to EPSG:3857 on the fly
 - [ ] Handle chunk sizes other than 128x128.
 - [ ] Appropriately handle non-float32 data.
 - [ ] Add more lifecycle events.
