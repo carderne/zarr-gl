@@ -18,3 +18,4 @@ ds = ds.rio.write_crs("EPSG:4326")
 
 pyramids = pyramid_reproject(ds, levels=6, resampling="bilinear")
 pyramids.to_zarr("./example.zarr", consolidated=True, mode="w")
+print("Result saved to ./example.zarr")

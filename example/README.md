@@ -23,7 +23,7 @@ uv sync
 4. Inspect the script at [./data_prep.py](./data_prep.py) and run it.
 It will generate a simple example dataset at `./example.zarr`.
 ```bash
-uv run python data_prep.py
+uv run python prep.py
 ```
 
 5. Run a simple Python server in this directory:
