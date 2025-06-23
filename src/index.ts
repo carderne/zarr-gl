@@ -174,9 +174,6 @@ export class ZarrLayer {
 
   async setSelector(selector: Record<string, number>) {
     this.selector = selector;
-    this.tiles = {};
-    await this.prepareTiles();
-    this.getVisibleTiles();
     await this.prefetchTileData();
     this.invalidate();
   }
@@ -187,7 +184,7 @@ export class ZarrLayer {
       const tilekey = tileToKey(tiletuple);
       const tile = this.tiles[tilekey];
       if (tile) {
-        await tile.fetchData();
+        await tile.fetchData(this.selector);
       }
     }
   }
@@ -246,7 +243,6 @@ export class ZarrLayer {
             dimensions,
             dimArrs,
             shape,
-            selector: this.selector,
             z,
             x,
             y,
@@ -260,7 +256,7 @@ export class ZarrLayer {
     lng: number,
     lat: number,
     x: number,
-    y: number,
+    y: number
   ): Promise<number> {
     const zoom = this.maxZoom;
     const tileTuple: TileTuple = [
@@ -273,7 +269,7 @@ export class ZarrLayer {
     if (tile) {
       const [_, shiftX, shiftY] = tileToScale(tileTuple);
       const [xLocal, yLocal] = [x - shiftX, y - shiftY];
-      const data = await tile.fetchData();
+      const data = await tile.fetchData(this.selector);
       const [xIndex, yIndex] = [
         Math.round(xLocal * TILE_WIDTH * 2 ** zoom),
         Math.round(yLocal * TILE_HEIGHT * 2 ** zoom),
@@ -335,12 +331,12 @@ export class ZarrLayer {
     this.frameBuffers.current = mustCreateFramebuffer(
       gl,
       this.canvasWidth,
-      this.canvasHeight,
+      this.canvasHeight
     );
     this.frameBuffers.next = mustCreateFramebuffer(
       gl,
       this.canvasWidth,
-      this.canvasHeight,
+      this.canvasHeight
     );
 
     await this.prepareTiles();
@@ -350,13 +346,13 @@ export class ZarrLayer {
     const renderVertShader = createShader(
       gl,
       gl.VERTEX_SHADER,
-      renderVertexSource,
+      renderVertexSource
     );
 
     const renderFragShader = createShader(
       gl,
       gl.FRAGMENT_SHADER,
-      renderFragmentSource,
+      renderFragmentSource
     );
 
     this.renderProgram = createProgram(gl, renderVertShader, renderFragShader);
@@ -382,12 +378,12 @@ export class ZarrLayer {
       this.frameBuffers.current = mustCreateFramebuffer(
         gl,
         this.canvasWidth,
-        this.canvasHeight,
+        this.canvasHeight
       );
       this.frameBuffers.next = mustCreateFramebuffer(
         gl,
         this.canvasWidth,
-        this.canvasHeight,
+        this.canvasHeight
       );
     }
 
@@ -517,7 +513,7 @@ export class ZarrLayer {
     gl.bufferData(
       gl.ARRAY_BUFFER,
       new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]),
-      gl.STATIC_DRAW,
+      gl.STATIC_DRAW
     );
     gl.enableVertexAttribArray(this.renderVertexLoc);
     gl.vertexAttribPointer(this.renderVertexLoc, 2, gl.FLOAT, false, 0, 0);

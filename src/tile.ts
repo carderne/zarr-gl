@@ -12,7 +12,6 @@ interface TileProps {
   chunks: number[];
   loader: Loader;
 
-  selector: Record<string, number>;
   dimensions: string[];
   shape: number[];
   dimArrs: Record<string, number[]>;
@@ -29,11 +28,11 @@ class Tile {
   chunks: number[];
   loader: Loader;
 
-  selector: Record<string, number>;
   dimensions: string[];
   shape: number[];
   dimArrs: Record<string, number[]>;
   data: Float32Array | null = null;
+  dataCache: Record<string, Float32Array | null>;
 
   z: number;
   x: number;
@@ -49,7 +48,6 @@ class Tile {
     chunk,
     chunks,
     loader,
-    selector,
     dimensions,
     shape,
     dimArrs,
@@ -62,10 +60,10 @@ class Tile {
     this.chunks = chunks;
     this.loader = loader;
 
-    this.selector = selector;
     this.dimensions = dimensions;
     this.shape = shape;
     this.dimArrs = dimArrs;
+    this.dataCache = {};
 
     this.z = z;
     this.x = x;
@@ -76,37 +74,39 @@ class Tile {
     this.pixCoordBuffer = mustCreateBuffer(gl);
   }
 
-  async fetchData(): Promise<Float32Array> {
-    if (this.data) {
+  async fetchData(selector: Record<string, number>): Promise<Float32Array> {
+    const neededChunks = getChunks({
+      selector,
+      dimensions: this.dimensions,
+      dimArrs: this.dimArrs,
+      shape: this.shape,
+      chunks: this.chunks,
+      x: this.x,
+      y: this.y,
+    });
+    const chunk = neededChunks[0];
+    if (neededChunks.length !== 1 || !chunk) {
+      throw new Error("Need exactly one chunk per tile");
+    }
+    const chunkKey = chunk.join(",");
+    if (this.dataCache[chunkKey]) {
+      this.data = this.dataCache[chunkKey];
       return this.data;
     } else if (this.loading) {
       // This is probably a bad idea...
       await timeout(500);
-      return this.fetchData();
+      return this.fetchData(selector);
     }
     return await new Promise<Float32Array>((resolve) => {
       this.loading = true;
-      const neededChunks = getChunks({
-        selector: this.selector,
-        dimensions: this.dimensions,
-        dimArrs: this.dimArrs,
-        shape: this.shape,
-        chunks: this.chunks,
-        x: this.x,
-        y: this.y,
-      });
-      const chunk = neededChunks[0];
-      if (neededChunks.length !== 1 || !chunk) {
-        throw new Error("Need exactly one chunk per tile");
-      }
       const indexIntoChunk = this.dimensions.map((d) => {
         if (["x", "y"].includes(d)) {
           return null;
-        } else if (this.selector[d] === undefined) {
+        } else if (selector[d] === undefined) {
           return null;
         } else {
           const idx = this.dimArrs[d]?.findIndex(
-            (coordinate) => coordinate === this.selector[d],
+            (coordinate) => coordinate === selector[d]
           );
           if (typeof idx === "undefined") {
             throw new Error("Couldnt extract indices from dimArrs");
@@ -119,6 +119,7 @@ class Tile {
 
         const d = data.pick(...indexIntoChunk);
         this.data = d.data as Float32Array; // TODO
+        this.dataCache[chunkKey] = this.data;
         resolve(this.data);
       });
     });
