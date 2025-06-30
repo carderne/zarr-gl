@@ -106,7 +106,7 @@ class Tile {
           return null;
         } else {
           const idx = this.dimArrs[d]?.findIndex(
-            (coordinate) => coordinate === selector[d]
+            (coordinate) => coordinate === selector[d],
           );
           if (typeof idx === "undefined") {
             throw new Error("Couldnt extract indices from dimArrs");
