@@ -174,9 +174,6 @@ export class ZarrLayer {
 
   async setSelector(selector: Record<string, number>) {
     this.selector = selector;
-    this.tiles = {};
-    await this.prepareTiles();
-    this.getVisibleTiles();
     await this.prefetchTileData();
     this.invalidate();
   }
@@ -187,7 +184,7 @@ export class ZarrLayer {
       const tilekey = tileToKey(tiletuple);
       const tile = this.tiles[tilekey];
       if (tile) {
-        await tile.fetchData();
+        await tile.fetchData(this.selector);
       }
     }
   }
@@ -246,7 +243,6 @@ export class ZarrLayer {
             dimensions,
             dimArrs,
             shape,
-            selector: this.selector,
             z,
             x,
             y,
@@ -273,7 +269,7 @@ export class ZarrLayer {
     if (tile) {
       const [_, shiftX, shiftY] = tileToScale(tileTuple);
       const [xLocal, yLocal] = [x - shiftX, y - shiftY];
-      const data = await tile.fetchData();
+      const data = await tile.fetchData(this.selector);
       const [xIndex, yIndex] = [
         Math.round(xLocal * TILE_WIDTH * 2 ** zoom),
         Math.round(yLocal * TILE_HEIGHT * 2 ** zoom),
