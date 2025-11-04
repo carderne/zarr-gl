@@ -66,11 +66,13 @@ When you open a pull request, a preview build is automatically created and deplo
 
 ```js
 // Option 1: esm.sh CDN (recommended - verified working)
-import { ZarrLayer } from "https://esm.sh/gh/james-willis/zarr-gl@gh-pages/pr-{number}/zarr-gl.js";
+import { ZarrLayer } from "https://esm.sh/gh/{owner}/{repo}@gh-pages/pr-{number}/zarr-gl.js";
 
 // Option 2: GitHub Pages (alternative)
-import { ZarrLayer } from "https://james-willis.github.io/zarr-gl/pr-{number}/zarr-gl.js";
+import { ZarrLayer } from "https://{owner}.github.io/{repo}/pr-{number}/zarr-gl.js";
 ```
+
+Replace `{owner}` with the repository owner and `{repo}` with the repository name. The exact URLs will be provided in the automated comment on your PR.
 
 **Note:** jsDelivr's `/+esm` feature only works with npm packages, not GitHub repos. For PR previews, use esm.sh which properly handles ESM transformation and serves files with correct MIME types.
 
