@@ -55,22 +55,22 @@ jobs:
             
             const comment = `## 🔍 PR Preview Ready!
             
-You can test this PR by using one of the following import methods:
-
-### Option 1: Direct GitHub Pages URL
-\`\`\`js
-import { ZarrLayer } from "${previewUrl}";
-\`\`\`
-
-### Option 2: jsDelivr CDN (recommended)
-\`\`\`js
-import { ZarrLayer } from "${esmUrl}";
-\`\`\`
-
-**Note:** It may take a few minutes for the preview to be available after the workflow completes.
-
----
-*This preview will be automatically updated when you push new commits to this PR.*`;
+            You can test this PR by using one of the following import methods:
+            
+            ### Option 1: Direct GitHub Pages URL
+            ${'```'}js
+            import { ZarrLayer } from "${previewUrl}";
+            ${'```'}
+            
+            ### Option 2: jsDelivr CDN (recommended)
+            ${'```'}js
+            import { ZarrLayer } from "${esmUrl}";
+            ${'```'}
+            
+            **Note:** It may take a few minutes for the preview to be available after the workflow completes.
+            
+            ---
+            *This preview will be automatically updated when you push new commits to this PR.*`;
 
             // Get existing comments
             const { data: comments } = await github.rest.issues.listComments({
