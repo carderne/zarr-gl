@@ -60,3 +60,13 @@ map.addLayer(layer);
 ## Contributing
 I'd love input on use-cases, ideas, missing features etc.
 Even better if they come with code.
+
+### Testing Pull Requests
+When you open a pull request, a preview build is automatically created and deployed. You can test the PR changes by using the preview link posted in the PR comments. This allows you to test changes before they are merged, using imports like:
+
+```js
+// Use the jsDelivr CDN link from the PR comment
+import { ZarrLayer } from "https://cdn.jsdelivr.net/gh/james-willis/zarr-gl@gh-pages/pr-{number}/zarr-gl.js";
+```
+
+Replace `{number}` with the actual PR number, or just copy the link from the automated comment on your PR.
