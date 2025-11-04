@@ -1,0 +1,113 @@
+name: PR Preview
+
+on:
+  pull_request:
+    types: [opened, reopened, synchronize]
+
+permissions:
+  contents: write
+  pull-requests: write
+  pages: write
+  id-token: write
+
+concurrency:
+  group: pr-preview-${{ github.event.number }}
+  cancel-in-progress: true
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          ref: ${{ github.event.pull_request.head.ref }}
+          repository: ${{ github.event.pull_request.head.repo.full_name }}
+      
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      
+      - name: Install dependencies
+        run: |
+          npm install -g npm@10
+          npm ci
+      
+      - name: Build library
+        run: npm run build
+      
+      - name: Create package.json for preview
+        run: |
+          cat > dist/package.json << 'EOF'
+          {
+            "name": "zarr-gl",
+            "version": "0.0.0-pr-preview",
+            "type": "module",
+            "main": "zarr-gl.js",
+            "module": "zarr-gl.js",
+            "exports": {
+              ".": "./zarr-gl.js",
+              "./zarr-gl.js": "./zarr-gl.js"
+            }
+          }
+          EOF
+      
+      - name: Deploy to GitHub Pages (PR preview)
+        uses: peaceiris/actions-gh-pages@v4
+        with:
+          github_token: ${{ secrets.GITHUB_TOKEN }}
+          publish_dir: ./dist
+          destination_dir: pr-${{ github.event.number }}
+          keep_files: true
+      
+      - name: Comment PR with preview link
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const prNumber = context.issue.number;
+            const owner = context.repo.owner;
+            const repo = context.repo.repo;
+            
+            const comment = `## 🔍 PR Preview Ready!
+            
+            You can test this PR by using the following import:
+            
+            ### esm.sh CDN (verified working)
+            ${'```'}js
+            import { ZarrLayer } from "https://esm.sh/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/zarr-gl.js";
+            ${'```'}
+            
+            **Note:** The built file includes all dependencies bundled, so it works as a standalone ESM module. esm.sh serves files from the gh-pages branch with proper ESM transformation and MIME types.
+            
+            ---
+            *This preview will be automatically updated when you push new commits to this PR.*`;
+
+            // Get existing comments
+            const { data: comments } = await github.rest.issues.listComments({
+              owner,
+              repo,
+              issue_number: prNumber,
+            });
+            
+            // Find existing preview comment
+            const botComment = comments.find(comment => 
+              comment.user.type === 'Bot' && 
+              comment.body.includes('PR Preview Ready')
+            );
+            
+            if (botComment) {
+              // Update existing comment
+              await github.rest.issues.updateComment({
+                owner,
+                repo,
+                comment_id: botComment.id,
+                body: comment,
+              });
+            } else {
+              // Create new comment
+              await github.rest.issues.createComment({
+                owner,
+                repo,
+                issue_number: prNumber,
+                body: comment,
+              });
+            }

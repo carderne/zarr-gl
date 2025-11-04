@@ -60,3 +60,17 @@ map.addLayer(layer);
 ## Contributing
 I'd love input on use-cases, ideas, missing features etc.
 Even better if they come with code.
+
+### Testing Pull Requests
+When you open a pull request, a preview build is automatically created and deployed. You can test the PR changes by using the preview link posted in the PR comments. This allows you to test changes before they are merged:
+
+```js
+// esm.sh CDN (verified working)
+import { ZarrLayer } from "https://esm.sh/gh/{owner}/{repo}@gh-pages/pr-{number}/zarr-gl.js";
+```
+
+Replace `{owner}` with the repository owner, `{repo}` with the repository name, and `{number}` with the PR number. The exact URL will be provided in the automated comment on your PR.
+
+**Note:** esm.sh serves files from the gh-pages branch with proper ESM transformation and MIME types, making it ideal for testing PR changes.
+
+Replace `{number}` with the actual PR number, or just copy the link from the automated comment on your PR.
