@@ -65,11 +65,13 @@ Even better if they come with code.
 When you open a pull request, a preview build is automatically created and deployed. You can test the PR changes by using the preview link posted in the PR comments. This allows you to test changes before they are merged, using imports like:
 
 ```js
-// Option 1: jsDelivr with /+esm (recommended - same as npm package usage)
-import { ZarrLayer } from "https://cdn.jsdelivr.net/gh/james-willis/zarr-gl@gh-pages/pr-{number}/+esm";
-
-// Option 2: esm.sh CDN
+// Option 1: esm.sh CDN (recommended - handles ESM transformation)
 import { ZarrLayer } from "https://esm.sh/gh/james-willis/zarr-gl@gh-pages/pr-{number}/zarr-gl.js";
+
+// Option 2: Direct jsDelivr URL (built file already includes all dependencies)
+import { ZarrLayer } from "https://cdn.jsdelivr.net/gh/james-willis/zarr-gl@gh-pages/pr-{number}/zarr-gl.js";
 ```
+
+**Note:** jsDelivr's `/+esm` feature only works with npm packages, not GitHub repos. For PR previews, use esm.sh or the direct URL.
 
 Replace `{number}` with the actual PR number, or just copy the link from the automated comment on your PR.
