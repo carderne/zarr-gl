@@ -35,6 +35,22 @@ jobs:
       - name: Build library
         run: npm run build
       
+      - name: Create package.json for preview
+        run: |
+          cat > dist/package.json << 'EOF'
+          {
+            "name": "zarr-gl",
+            "version": "0.0.0-pr-preview",
+            "type": "module",
+            "main": "zarr-gl.js",
+            "module": "zarr-gl.js",
+            "exports": {
+              ".": "./zarr-gl.js",
+              "./zarr-gl.js": "./zarr-gl.js"
+            }
+          }
+          EOF
+      
       - name: Deploy to GitHub Pages (PR preview)
         uses: peaceiris/actions-gh-pages@v4
         with:
@@ -57,12 +73,17 @@ jobs:
             
             You can test this PR by using one of the following import methods:
             
-            ### Option 1: Direct GitHub Pages URL
+            ### Option 1: jsDelivr with /+esm (recommended)
             ${'```'}js
-            import { ZarrLayer } from "${previewUrl}";
+            import { ZarrLayer } from "https://cdn.jsdelivr.net/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/+esm";
             ${'```'}
             
-            ### Option 2: jsDelivr CDN (recommended)
+            ### Option 2: esm.sh CDN
+            ${'```'}js
+            import { ZarrLayer } from "https://esm.sh/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/zarr-gl.js";
+            ${'```'}
+            
+            ### Option 3: Direct file URL
             ${'```'}js
             import { ZarrLayer } from "${esmUrl}";
             ${'```'}
