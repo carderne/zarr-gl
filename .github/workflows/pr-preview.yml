@@ -66,24 +66,17 @@ jobs:
             const prNumber = context.issue.number;
             const owner = context.repo.owner;
             const repo = context.repo.repo;
-            const previewUrl = `https://${owner}.github.io/${repo}/pr-${prNumber}/zarr-gl.js`;
-            const esmUrl = `https://cdn.jsdelivr.net/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/zarr-gl.js`;
             
             const comment = `## 🔍 PR Preview Ready!
             
-            You can test this PR by using one of the following import methods:
+            You can test this PR by using the following import:
             
-            ### Option 1: esm.sh CDN (recommended - verified working)
+            ### esm.sh CDN (verified working)
             ${'```'}js
             import { ZarrLayer } from "https://esm.sh/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/zarr-gl.js";
             ${'```'}
             
-            ### Option 2: GitHub Pages
-            ${'```'}js
-            import { ZarrLayer } from "${previewUrl}";
-            ${'```'}
-            
-            **Note:** The built file includes all dependencies bundled, so it works as a standalone ESM module. We recommend esm.sh for PR previews as it properly handles ESM transformation and serves files with correct MIME types.
+            **Note:** The built file includes all dependencies bundled, so it works as a standalone ESM module. esm.sh serves files from the gh-pages branch with proper ESM transformation and MIME types.
             
             ---
             *This preview will be automatically updated when you push new commits to this PR.*`;
