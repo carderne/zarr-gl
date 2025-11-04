@@ -73,22 +73,17 @@ jobs:
             
             You can test this PR by using one of the following import methods:
             
-            ### Option 1: esm.sh CDN (recommended)
+            ### Option 1: esm.sh CDN (recommended - verified working)
             ${'```'}js
             import { ZarrLayer } from "https://esm.sh/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/zarr-gl.js";
             ${'```'}
             
-            ### Option 2: Direct jsDelivr URL
-            ${'```'}js
-            import { ZarrLayer } from "https://cdn.jsdelivr.net/gh/${owner}/${repo}@gh-pages/pr-${prNumber}/zarr-gl.js";
-            ${'```'}
-            
-            ### Option 3: GitHub Pages
+            ### Option 2: GitHub Pages
             ${'```'}js
             import { ZarrLayer } from "${previewUrl}";
             ${'```'}
             
-            **Note:** The built file includes all dependencies bundled, so it works as a standalone ESM module. jsDelivr's \`/+esm\` feature only works with npm packages, not GitHub repos, which is why we recommend esm.sh for PR previews.
+            **Note:** The built file includes all dependencies bundled, so it works as a standalone ESM module. We recommend esm.sh for PR previews as it properly handles ESM transformation and serves files with correct MIME types.
             
             ---
             *This preview will be automatically updated when you push new commits to this PR.*`;
