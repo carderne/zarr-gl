@@ -60,3 +60,6 @@ map.addLayer(layer);
 ## Contributing
 I'd love input on use-cases, ideas, missing features etc.
 Even better if they come with code.
+
+### Testing Pull Requests
+When you open a pull request, a preview build is automatically created and deployed. A Github action will autmatically provide the link and the code snippet to use in a comment on the PR.
