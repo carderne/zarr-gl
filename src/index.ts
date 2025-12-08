@@ -24,10 +24,6 @@ import renderVertexSource from "./shaders/renderVert.glsl";
 
 type RGB = [number, number, number];
 
-// TODO handle different tile/chunk shapes
-const TILE_WIDTH = 128;
-const TILE_HEIGHT = 128;
-
 export interface ZarrLayerProps {
   map: Map;
   id: string; // id for the layer, must be unique
@@ -255,11 +251,14 @@ export class ZarrLayer {
       const [_, shiftX, shiftY] = tileToScale(tileTuple);
       const [xLocal, yLocal] = [x - shiftX, y - shiftY];
       const data = await tile.fetchData(this.selector);
+      // assume x and y are always present in tile dimensions
+      const tileWidth = tile.getDimension("x")!;
+      const tileHeight = tile.getDimension("y")!;
       const [xIndex, yIndex] = [
-        Math.round(xLocal * TILE_WIDTH * 2 ** zoom),
-        Math.round(yLocal * TILE_HEIGHT * 2 ** zoom),
+        Math.round(xLocal * tileWidth * 2 ** zoom),
+        Math.round(yLocal * tileHeight * 2 ** zoom),
       ];
-      const index = yIndex * TILE_WIDTH + xIndex;
+      const index = yIndex * tileWidth + xIndex;
       const val = data[index];
       if (val) {
         return val;
@@ -429,9 +428,13 @@ export class ZarrLayer {
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.NEAREST);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
       gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
+
+      // assume x and y are always present in tile dimensions
+      const tileWidth = tile.getDimension("x")!;
+      const tileHeight = tile.getDimension("y")!;
       // iOS Safari only supports RGB16F
       // prettier-ignore
-      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, TILE_WIDTH, TILE_HEIGHT, 0, gl.RED, gl.FLOAT, tile.data);
+      gl.texImage2D(gl.TEXTURE_2D, 0, gl.R16F, tileWidth, tileHeight, 0, gl.RED, gl.FLOAT, tile.data);
 
       // These are the vertex and pixCoord that were buffered+bound
       // further up. For some reason this has to happen _after_ the

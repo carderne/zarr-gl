@@ -106,6 +106,14 @@ class Tile {
       });
     });
   }
+
+  getDimension(dimension: string): number | undefined {
+    const index = this.dimensions.indexOf(dimension);
+    if (index === -1) {
+      return undefined;
+    }
+    return this.chunks[index];
+  }
 }
 
 export default Tile;
