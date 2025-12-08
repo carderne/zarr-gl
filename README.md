@@ -58,8 +58,5 @@ map.addLayer(layer);
 2. There's also a more complex React app inside [demo](./demo) and viewable at [rainy.rdrn.me](http://rainy.rdrn.me).
 
 ## Contributing
-I'd love input on use-cases, ideas, missing features etc.
-Even better if they come with code.
 
-### Testing Pull Requests
-When you open a pull request, a preview build is automatically created and deployed. A Github action will autmatically provide the link and the code snippet to use in a comment on the PR.
+See [CONTRIBUTING.md](./CONTRIBUTING.md) for guidelines on how to contribute to this project.
