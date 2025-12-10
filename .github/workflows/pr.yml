@@ -18,6 +18,7 @@ jobs:
           node-version: 20
       - run: npm install -g npm@10
       - run: npm ci
-      - run: npx prettier --check src/*.ts
-      - run: npm run lint
+      - run: npm run ci:fmt
+      - run: npm run ci:lint
+      - run: npm run ci:check
       - run: npm run build

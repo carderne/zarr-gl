@@ -18,11 +18,14 @@
     "provenance": true
   },
   "scripts": {
+    "dev": "webpack watch --mode development",
+    "build": "webpack --mode production",
     "fmt": "prettier --write src/*.ts",
     "lint": "eslint src/*.ts",
     "check": "tsc --noEmit",
-    "dev": "webpack watch --mode development",
-    "build": "webpack --mode production"
+    "ci:fmt": "prettier --check src/*.ts",
+    "ci:lint": "npm run lint",
+    "ci:check": "npm run check"
   },
   "repository": {
     "type": "git",
