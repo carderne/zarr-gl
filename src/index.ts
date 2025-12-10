@@ -210,16 +210,8 @@ export class ZarrLayer {
       throw new Error("Cant prepareTiles with no GL context set");
     }
     const gl = this.gl;
-    const {
-      loaders,
-      dimensions,
-      dimArrs,
-      levels,
-      maxZoom,
-      shape,
-      chunks,
-      fillValue,
-    } = await zarrLoad(this.zarrSource, this.variable, this.zarrVersion);
+    const { loaders, dimensions, dimArrs, levels, maxZoom, shape, chunks, fillValue } =
+      await zarrLoad(this.zarrSource, this.variable, this.zarrVersion);
 
     // TODO check if selector references non-existent dimensions
 
@@ -254,18 +246,9 @@ export class ZarrLayer {
     });
   }
 
-  async getTileValue(
-    lng: number,
-    lat: number,
-    x: number,
-    y: number,
-  ): Promise<number> {
+  async getTileValue(lng: number, lat: number, x: number, y: number): Promise<number> {
     const zoom = this.maxZoom;
-    const tileTuple: TileTuple = [
-      zoom,
-      lon2tile(lng, zoom),
-      lat2tile(lat, zoom),
-    ];
+    const tileTuple: TileTuple = [zoom, lon2tile(lng, zoom), lat2tile(lat, zoom)];
     const tileKey = tileToKey(tileTuple);
     const tile = this.tiles[tileKey];
     if (tile) {
@@ -330,32 +313,16 @@ export class ZarrLayer {
 
     this.canvasWidth = gl.canvas.width;
     this.canvasHeight = gl.canvas.height;
-    this.frameBuffers.current = mustCreateFramebuffer(
-      gl,
-      this.canvasWidth,
-      this.canvasHeight,
-    );
-    this.frameBuffers.next = mustCreateFramebuffer(
-      gl,
-      this.canvasWidth,
-      this.canvasHeight,
-    );
+    this.frameBuffers.current = mustCreateFramebuffer(gl, this.canvasWidth, this.canvasHeight);
+    this.frameBuffers.next = mustCreateFramebuffer(gl, this.canvasWidth, this.canvasHeight);
 
     await this.prepareTiles();
 
     this.vertexBuffer = mustCreateBuffer(gl);
 
-    const renderVertShader = createShader(
-      gl,
-      gl.VERTEX_SHADER,
-      renderVertexSource,
-    );
+    const renderVertShader = createShader(gl, gl.VERTEX_SHADER, renderVertexSource);
 
-    const renderFragShader = createShader(
-      gl,
-      gl.FRAGMENT_SHADER,
-      renderFragmentSource,
-    );
+    const renderFragShader = createShader(gl, gl.FRAGMENT_SHADER, renderFragmentSource);
 
     this.renderProgram = createProgram(gl, renderVertShader, renderFragShader);
     this.renderVertexLoc = gl.getAttribLocation(this.renderProgram, "vertex");
@@ -371,22 +338,11 @@ export class ZarrLayer {
 
     // Check if canvas size has changed
     gl.useProgram(this.program);
-    if (
-      gl.canvas.width !== this.canvasWidth ||
-      gl.canvas.height !== this.canvasHeight
-    ) {
+    if (gl.canvas.width !== this.canvasWidth || gl.canvas.height !== this.canvasHeight) {
       this.canvasWidth = gl.canvas.width;
       this.canvasHeight = gl.canvas.height;
-      this.frameBuffers.current = mustCreateFramebuffer(
-        gl,
-        this.canvasWidth,
-        this.canvasHeight,
-      );
-      this.frameBuffers.next = mustCreateFramebuffer(
-        gl,
-        this.canvasWidth,
-        this.canvasHeight,
-      );
+      this.frameBuffers.current = mustCreateFramebuffer(gl, this.canvasWidth, this.canvasHeight);
+      this.frameBuffers.next = mustCreateFramebuffer(gl, this.canvasWidth, this.canvasHeight);
     }
 
     // First copy the current framebuffer to the next one
@@ -512,11 +468,7 @@ export class ZarrLayer {
 
     // Set up vertices for a full-screen quad
     gl.bindBuffer(gl.ARRAY_BUFFER, this.vertexBuffer);
-    gl.bufferData(
-      gl.ARRAY_BUFFER,
-      new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]),
-      gl.STATIC_DRAW,
-    );
+    gl.bufferData(gl.ARRAY_BUFFER, new Float32Array([-1, -1, -1, 1, 1, -1, 1, 1]), gl.STATIC_DRAW);
     gl.enableVertexAttribArray(this.renderVertexLoc);
     gl.vertexAttribPointer(this.renderVertexLoc, 2, gl.FLOAT, false, 0, 0);
 

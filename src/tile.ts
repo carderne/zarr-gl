@@ -1,10 +1,5 @@
 import type { ChunkTuple, Loader } from "zarr-js";
-import {
-  getChunks,
-  mustCreateBuffer,
-  mustCreateTexture,
-  timeout,
-} from "./utils";
+import { getChunks, mustCreateBuffer, mustCreateTexture, timeout } from "./utils";
 import type { NdArray } from "ndarray";
 
 interface TileProps {
@@ -44,18 +39,7 @@ class Tile {
   vertexBuffer: WebGLBuffer;
   pixCoordBuffer: WebGLBuffer;
 
-  constructor({
-    chunk,
-    chunks,
-    loader,
-    dimensions,
-    shape,
-    dimArrs,
-    z,
-    x,
-    y,
-    gl,
-  }: TileProps) {
+  constructor({ chunk, chunks, loader, dimensions, shape, dimArrs, z, x, y, gl }: TileProps) {
     this.chunk = chunk;
     this.chunks = chunks;
     this.loader = loader;
@@ -105,9 +89,7 @@ class Tile {
         } else if (selector[d] === undefined) {
           return null;
         } else {
-          const idx = this.dimArrs[d]?.findIndex(
-            (coordinate) => coordinate === selector[d],
-          );
+          const idx = this.dimArrs[d]?.findIndex((coordinate) => coordinate === selector[d]);
           if (typeof idx === "undefined") {
             throw new Error("Couldnt extract indices from dimArrs");
           }

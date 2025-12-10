@@ -25,7 +25,8 @@
     "check": "tsc --noEmit",
     "ci:fmt": "prettier --check src/*.ts",
     "ci:lint": "npm run lint",
-    "ci:check": "npm run check"
+    "ci:check": "npm run check",
+    "all": "npm run fmt && npm run lint && npm run check"
   },
   "repository": {
     "type": "git",

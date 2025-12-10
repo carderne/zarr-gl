@@ -9,10 +9,7 @@ export function lon2tile(lon: number, zoom: number): number {
 export function lat2tile(lat: number, zoom: number): number {
   return Math.floor(
     ((1 -
-      Math.log(
-        Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180),
-      ) /
-        Math.PI) /
+      Math.log(Math.tan((lat * Math.PI) / 180) + 1 / Math.cos((lat * Math.PI) / 180)) / Math.PI) /
       2) *
       Math.pow(2, zoom),
   );
@@ -144,30 +141,14 @@ export const mustCreateFramebuffer = (
   }
 
   gl.bindTexture(gl.TEXTURE_2D, texture);
-  gl.texImage2D(
-    gl.TEXTURE_2D,
-    0,
-    gl.RGBA,
-    width,
-    height,
-    0,
-    gl.RGBA,
-    gl.UNSIGNED_BYTE,
-    null,
-  );
+  gl.texImage2D(gl.TEXTURE_2D, 0, gl.RGBA, width, height, 0, gl.RGBA, gl.UNSIGNED_BYTE, null);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MIN_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_MAG_FILTER, gl.LINEAR);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_S, gl.CLAMP_TO_EDGE);
   gl.texParameteri(gl.TEXTURE_2D, gl.TEXTURE_WRAP_T, gl.CLAMP_TO_EDGE);
 
   gl.bindFramebuffer(gl.FRAMEBUFFER, framebuffer);
-  gl.framebufferTexture2D(
-    gl.FRAMEBUFFER,
-    gl.COLOR_ATTACHMENT0,
-    gl.TEXTURE_2D,
-    texture,
-    0,
-  );
+  gl.framebufferTexture2D(gl.FRAMEBUFFER, gl.COLOR_ATTACHMENT0, gl.TEXTURE_2D, texture, 0);
 
   return { framebuffer, texture };
 };
@@ -218,9 +199,7 @@ export const getChunks = ({
         ...new Set(indices.map((index) => Math.floor(index / chunkSize))),
       ];
 
-      return acc.flatMap((a) =>
-        uniqueChunkIndices.map((chunkIndex) => [...a, chunkIndex]),
-      );
+      return acc.flatMap((a) => uniqueChunkIndices.map((chunkIndex) => [...a, chunkIndex]));
     },
     [[]],
   );
