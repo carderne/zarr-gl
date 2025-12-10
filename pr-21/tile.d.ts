@@ -27,7 +27,7 @@ declare class Tile {
     tileTexture: WebGLTexture;
     vertexBuffer: WebGLBuffer;
     pixCoordBuffer: WebGLBuffer;
-    constructor({ chunk, chunks, loader, dimensions, shape, dimArrs, z, x, y, gl, }: TileProps);
+    constructor({ chunk, chunks, loader, dimensions, shape, dimArrs, z, x, y, gl }: TileProps);
     fetchData(selector: Record<string, number>): Promise<Float32Array>;
 }
 export default Tile;
