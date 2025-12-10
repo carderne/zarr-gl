@@ -29,6 +29,11 @@ jobs:
       - name: Build library
         run: npm run build
       
+      - name: Save PR metadata
+        run: |
+          mkdir -p pr-metadata
+          echo ${{ github.event.number }} > pr-metadata/pr-number.txt
+      
       - name: Create package.json for preview
         run: |
           cat > dist/package.json << 'EOF'
@@ -44,6 +49,13 @@ jobs:
             }
           }
           EOF
+      
+      - name: Upload PR metadata
+        uses: actions/upload-artifact@v4
+        with:
+          name: pr-metadata-${{ github.event.number }}
+          path: pr-metadata/
+          retention-days: 1
       
       - name: Upload build artifact
         uses: actions/upload-artifact@v4
