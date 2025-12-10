@@ -23,17 +23,17 @@ const getPyramidMetadata = (multiscales: Multiscale[]) => {
 };
 
 const loadZarrV2 = async (source: string, variable: string) => {
-  const [loaders, metadata] = await new Promise<
-    [Record<string, Loader>, Metadata]
-  >((resolve, reject) => {
-    zarr(window.fetch, "v2").openGroup(
-      source,
-      (err: Error, l: Record<string, Loader>, m: Metadata) => {
-        if (err) reject(err);
-        resolve([l, m]);
-      },
-    );
-  });
+  const [loaders, metadata] = await new Promise<[Record<string, Loader>, Metadata]>(
+    (resolve, reject) => {
+      zarr(window.fetch, "v2").openGroup(
+        source,
+        (err: Error, l: Record<string, Loader>, m: Metadata) => {
+          if (err) reject(err);
+          resolve([l, m]);
+        },
+      );
+    },
+  );
 
   const rootZattrs = metadata.metadata[".zattrs"];
   if (!rootZattrs) {
@@ -99,13 +99,11 @@ const loadZarrV2 = async (source: string, variable: string) => {
 
 const loadZarrV3 = async (source: string, variable: string) => {
   const metadata = await fetch(`${source}/zarr.json`).then((res) => res.json());
-  const { levels, maxZoom, tileSize, crs } = getPyramidMetadata(
-    metadata.attributes.multiscales,
-  );
+  const { levels, maxZoom, tileSize, crs } = getPyramidMetadata(metadata.attributes.multiscales);
 
-  const arrayMetadata = await fetch(
-    `${source}/${levels[0]}/${variable}/zarr.json`,
-  ).then((res) => res.json());
+  const arrayMetadata = await fetch(`${source}/${levels[0]}/${variable}/zarr.json`).then((res) =>
+    res.json(),
+  );
 
   const dimensions = arrayMetadata.attributes._ARRAY_DIMENSIONS as string[];
   const shape = arrayMetadata.shape;
@@ -180,10 +178,7 @@ const loadZarr = async (
   variable: string,
   version: "v2" | "v3",
 ): ReturnType<typeof loadZarrV2> => {
-  const res =
-    version === "v2"
-      ? loadZarrV2(source, variable)
-      : loadZarrV3(source, variable);
+  const res = version === "v2" ? loadZarrV2(source, variable) : loadZarrV3(source, variable);
   return res;
 };
 
