@@ -17,18 +17,32 @@ jobs:
       github.event.workflow_run.event == 'pull_request' &&
       github.event.workflow_run.conclusion == 'success'
     steps:
+      - name: Download PR metadata
+        uses: actions/download-artifact@v4
+        with:
+          pattern: pr-metadata-*
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          run-id: ${{ github.event.workflow_run.id }}
+          path: pr-metadata/
+          merge-multiple: false
+      
       - name: Get PR number
         id: pr
         run: |
-          PR_NUMBER=$(gh api "/repos/${{ github.repository }}/actions/runs/${{ github.event.workflow_run.id }}" --jq '.pull_requests[0].number')
-          if [ -z "$PR_NUMBER" ] || [ "$PR_NUMBER" = "null" ]; then
-            echo "Error: Could not determine PR number from workflow run"
+          # Find the pr-metadata directory (will be pr-metadata-{number})
+          METADATA_DIR=$(find pr-metadata -mindepth 1 -maxdepth 1 -type d | head -n 1)
+          if [ -z "$METADATA_DIR" ]; then
+            echo "Error: Could not find PR metadata directory"
+            exit 1
+          fi
+          
+          PR_NUMBER=$(cat "$METADATA_DIR/pr-number.txt")
+          if [ -z "$PR_NUMBER" ]; then
+            echo "Error: Could not determine PR number from metadata"
             exit 1
           fi
           echo "Deploying preview for PR #$PR_NUMBER"
           echo "number=$PR_NUMBER" >> $GITHUB_OUTPUT
-        env:
-          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
       
       - name: Download artifact
         uses: actions/download-artifact@v4
