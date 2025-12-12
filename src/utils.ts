@@ -153,10 +153,6 @@ export const mustCreateFramebuffer = (
   return { framebuffer, texture };
 };
 
-export const timeout = (ms: number) => {
-  return new Promise((resolve) => setTimeout(resolve, ms));
-};
-
 export const getChunks = ({
   selector,
   dimensions,

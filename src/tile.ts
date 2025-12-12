@@ -1,5 +1,5 @@
 import type { ChunkTuple, Loader } from "zarr-js";
-import { getChunks, mustCreateBuffer, mustCreateTexture, timeout } from "./utils";
+import { getChunks, mustCreateBuffer, mustCreateTexture } from "./utils";
 import type { NdArray } from "ndarray";
 
 interface TileProps {
@@ -34,6 +34,7 @@ class Tile {
   y: number;
 
   loading: boolean = false;
+  loadingPromise: Promise<Float32Array> | null = null;
 
   tileTexture: WebGLTexture;
   vertexBuffer: WebGLBuffer;
@@ -76,12 +77,12 @@ class Tile {
     if (this.dataCache[chunkKey]) {
       this.data = this.dataCache[chunkKey];
       return this.data;
-    } else if (this.loading) {
-      // This is probably a bad idea...
-      await timeout(500);
-      return this.fetchData(selector);
+    } else if (this.loadingPromise) {
+      // If already loading, return the existing promise
+      return this.loadingPromise;
     }
-    return await new Promise<Float32Array>((resolve) => {
+
+    this.loadingPromise = new Promise<Float32Array>((resolve) => {
       this.loading = true;
       const indexIntoChunk = this.dimensions.map((d) => {
         if (["x", "y"].includes(d)) {
@@ -98,6 +99,7 @@ class Tile {
       });
       this.loader(chunk, (_: Error, data: NdArray) => {
         this.loading = false;
+        this.loadingPromise = null;
 
         const d = data.pick(...indexIntoChunk);
         this.data = d.data as Float32Array; // TODO
@@ -105,6 +107,8 @@ class Tile {
         resolve(this.data);
       });
     });
+
+    return this.loadingPromise;
   }
 
   getDimension(dimension: string): number | undefined {
