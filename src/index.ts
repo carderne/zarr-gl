@@ -21,6 +21,7 @@ import fragmentSource from "./shaders/frag.glsl";
 import vertexSource from "./shaders/vert.glsl";
 import renderFragmentSource from "./shaders/renderFrag.glsl";
 import renderVertexSource from "./shaders/renderVert.glsl";
+import type { RequestParameters } from "./store";
 
 type RGB = [number, number, number];
 
@@ -37,6 +38,7 @@ export interface ZarrLayerProps {
   opacity?: number;
   minRenderZoom?: number;
   invalidate?: () => void;
+  transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>;
 }
 
 export class ZarrLayer {
@@ -50,6 +52,7 @@ export class ZarrLayer {
   variable: string;
   selector: Record<string, number>;
   invalidate: () => void;
+  transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>;
 
   cmapLength: number;
   cmap: Float32Array;
@@ -118,6 +121,7 @@ export class ZarrLayer {
     opacity = 1,
     minRenderZoom = 3,
     invalidate = () => {},
+    transformRequest,
   }: ZarrLayerProps) {
     this.type = "custom";
     this.renderingMode = "2d";
@@ -129,6 +133,7 @@ export class ZarrLayer {
     this.selector = selector ?? {};
 
     this.invalidate = invalidate;
+    this.transformRequest = transformRequest;
 
     this.cmap = new Float32Array(colormap.flat().map((v) => v / 255.0));
     this.cmapLength = colormap.length;
@@ -215,7 +220,7 @@ export class ZarrLayer {
     }
     const gl = this.gl;
     const { loaders, dimensions, dimArrs, levels, maxZoom, shape, chunks, fillValue } =
-      await zarrLoad(this.zarrSource, this.variable, this.zarrVersion);
+      await zarrLoad(this.zarrSource, this.variable, this.zarrVersion, this.transformRequest);
 
     // TODO check if selector references non-existent dimensions
 
