@@ -24,10 +24,12 @@ declare class Tile {
     x: number;
     y: number;
     loading: boolean;
+    loadingPromise: Promise<Float32Array> | null;
     tileTexture: WebGLTexture;
     vertexBuffer: WebGLBuffer;
     pixCoordBuffer: WebGLBuffer;
     constructor({ chunk, chunks, loader, dimensions, shape, dimArrs, z, x, y, gl }: TileProps);
     fetchData(selector: Record<string, number>): Promise<Float32Array>;
+    getDimension(dimension: string): number | undefined;
 }
 export default Tile;

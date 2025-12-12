@@ -16,7 +16,6 @@ export declare const mustCreateFramebuffer: (gl: WebGL2RenderingContext, width: 
     framebuffer: WebGLFramebuffer;
     texture: WebGLTexture;
 };
-export declare const timeout: (ms: number) => Promise<unknown>;
 export declare const getChunks: ({ selector, dimensions, dimArrs, shape, chunks, x, y, }: {
     selector: Record<string, number>;
     dimensions: string[];
