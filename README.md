@@ -49,7 +49,7 @@ map.addLayer(layer);
 ## Roadmap
 - [x] Support a `selector` option to index into additional dimensions. Currently only 2D datasets are supported.
 - [ ] Reproject from lon/lat to EPSG:3857 on the fly
-- [ ] Handle chunk sizes other than 128x128.
+- [x] Handle chunk sizes other than 128x128.
 - [ ] Appropriately handle non-float32 data.
 - [ ] Add more lifecycle events.
 
