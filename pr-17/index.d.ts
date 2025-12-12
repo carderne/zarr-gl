@@ -2,14 +2,8 @@ import type { Map } from "mapbox-gl";
 import { TileTuple } from "./utils";
 import type { Loader } from "zarr-js";
 import Tile from "./tile";
+import type { RequestParameters } from "./store";
 type RGB = [number, number, number];
-export interface RequestParameters {
-    url: string;
-    headers?: {
-        [key: string]: string;
-    };
-    credentials?: RequestCredentials;
-}
 export interface ZarrLayerProps {
     map: Map;
     id: string;

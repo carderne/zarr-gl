@@ -1,5 +1,11 @@
 import type { Loader } from "zarr-js";
-import type { RequestParameters } from "./index";
+export interface RequestParameters {
+    url: string;
+    headers?: {
+        [key: string]: string;
+    };
+    credentials?: RequestCredentials;
+}
 declare const loadZarrV2: (source: string, variable: string, transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => Promise<{
     loaders: Record<string, Loader>;
     dimensions: string[];
