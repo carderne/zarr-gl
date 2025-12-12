@@ -1,5 +1,5 @@
 import type { Loader } from "zarr-js";
-import type { RequestParameters } from "mapbox-gl";
+import type { RequestParameters } from "./index";
 declare const loadZarrV2: (source: string, variable: string, transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => Promise<{
     loaders: Record<string, Loader>;
     dimensions: string[];
