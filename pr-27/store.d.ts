@@ -1,3 +1,11 @@
+export interface MultiscaleDataset {
+    path: string;
+    pixels_per_tile?: number;
+    crs?: string;
+}
+export interface Multiscale {
+    datasets: MultiscaleDataset[];
+}
 export interface RequestParameters {
     url: string;
     headers?: {

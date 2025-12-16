@@ -1,4 +1,7 @@
-import type { ChunkTuple, Loader } from "./types/zarrita";
+import { ChunkTuple } from "./utils";
+import type { Array, DataType } from "zarrita";
+import type { Readable } from "@zarrita/storage";
+export type Loader = Array<DataType, Readable>;
 interface TileProps {
     chunk: ChunkTuple;
     chunks: number[];

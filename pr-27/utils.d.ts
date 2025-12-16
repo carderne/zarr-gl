@@ -1,4 +1,4 @@
-import { ChunkTuple } from "./types/zarrita";
+export type ChunkTuple = number[];
 export type TileTuple = [number, number, number];
 export declare function lon2tile(lon: number, zoom: number): number;
 export declare function lat2tile(lat: number, zoom: number): number;

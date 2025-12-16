@@ -1,7 +1,6 @@
 import type { Map } from "mapbox-gl";
 import { TileTuple } from "./utils";
-import type { Loader } from "./types/zarrita";
-import Tile from "./tile";
+import Tile, { Loader } from "./tile";
 import type { RequestParameters } from "./store";
 type RGB = [number, number, number];
 export interface ZarrLayerProps {
