@@ -5,7 +5,7 @@ const __dirname = path.dirname(__filename);
 
 const webpackConfig = {
   entry: "./src/index.ts",
-  devtool: "source-map",
+  devtool: false,
   module: {
     rules: [
       {
