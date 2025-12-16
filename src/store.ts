@@ -143,7 +143,7 @@ const loadZarrV3 = async (
     res.json(),
   );
 
-  const dimensions = arrayMetadata.attributes._ARRAY_DIMENSIONS as string[];
+  const dimensions = arrayMetadata.dimension_names as string[];
   const shape = arrayMetadata.shape;
   const isSharded = arrayMetadata.codecs[0].name == "sharding_indexed";
   const chunks = isSharded
