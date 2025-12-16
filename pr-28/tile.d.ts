@@ -33,6 +33,5 @@ declare class Tile {
     constructor({ chunk, chunks, loader, dimensions, shape, dimArrs, z, x, y, gl }: TileProps);
     fetchData(selector: Record<string, number>): Promise<Float32Array>;
     getDimension(dimension: string): number | undefined;
-    private sliceChunkData;
 }
 export default Tile;

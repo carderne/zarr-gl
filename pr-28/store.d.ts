@@ -13,7 +13,7 @@ export interface RequestParameters {
     };
     credentials?: RequestCredentials;
 }
-declare const loadZarrVersion: (source: string, variable: string, version: "v2" | "v3", transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => Promise<{
+declare const loadZarrVersion: (source: string, variable: string, transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => Promise<{
     loaders: any;
     dimensions: string[];
     dimArrs: any;
@@ -25,5 +25,5 @@ declare const loadZarrVersion: (source: string, variable: string, version: "v2" 
     chunks: number[];
     fillValue: number;
 }>;
-declare const loadZarr: (source: string, variable: string, version: "v2" | "v3", transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => ReturnType<typeof loadZarrVersion>;
+declare const loadZarr: (source: string, variable: string, transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => ReturnType<typeof loadZarrVersion>;
 export default loadZarr;

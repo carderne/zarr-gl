@@ -7,7 +7,7 @@ export interface ZarrLayerProps {
     map: Map;
     id: string;
     source: string;
-    version: "v2" | "v3";
+    version?: "v2" | "v3";
     variable: string;
     selector: Record<string, number>;
     colormap: RGB[];
@@ -24,7 +24,7 @@ export declare class ZarrLayer {
     map: Map;
     id: string;
     zarrSource: string;
-    zarrVersion: "v2" | "v3";
+    zarrVersion?: "v2" | "v3";
     variable: string;
     selector: Record<string, number>;
     invalidate: () => void;
