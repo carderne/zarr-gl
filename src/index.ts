@@ -13,9 +13,9 @@ import {
   mustCreateTexture,
   mustCreateFramebuffer,
   mustCreateBuffer,
+  ChunkTuple,
 } from "./utils";
-import type { ChunkTuple, Loader } from "zarr-js";
-import Tile from "./tile";
+import Tile, { Loader } from "./tile";
 import zarrLoad from "./store";
 import fragmentSource from "./shaders/frag.glsl";
 import vertexSource from "./shaders/vert.glsl";
@@ -210,8 +210,7 @@ export class ZarrLayer {
     if (!bounds) {
       throw new Error("Couldn't get map bounds");
     }
-    const tiles = getTilesAtZoom(zoom, bounds);
-    return tiles;
+    return getTilesAtZoom(zoom, bounds);
   }
 
   async prepareTiles() {

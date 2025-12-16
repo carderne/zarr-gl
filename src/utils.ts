@@ -1,4 +1,4 @@
-import { ChunkTuple } from "zarr-js";
+export type ChunkTuple = number[];
 
 export type TileTuple = [number, number, number];
 

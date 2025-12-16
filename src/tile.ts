@@ -1,6 +1,9 @@
-import type { ChunkTuple, Loader } from "zarr-js";
-import { getChunks, mustCreateBuffer, mustCreateTexture } from "./utils";
-import type { NdArray } from "ndarray";
+import { getChunks, mustCreateBuffer, mustCreateTexture, ChunkTuple } from "./utils";
+import * as zarr from "zarrita";
+import type { Array, DataType } from "zarrita";
+import type { Readable } from "@zarrita/storage";
+
+export type Loader = Array<DataType, Readable>;
 
 interface TileProps {
   chunk: ChunkTuple;
@@ -82,7 +85,7 @@ class Tile {
       return this.loadingPromise;
     }
 
-    this.loadingPromise = new Promise<Float32Array>((resolve) => {
+    this.loadingPromise = (async () => {
       this.loading = true;
       const indexIntoChunk = this.dimensions.map((d) => {
         if (["x", "y"].includes(d)) {
@@ -97,16 +100,19 @@ class Tile {
           return idx;
         }
       });
-      this.loader(chunk, (_: Error, data: NdArray) => {
-        this.loading = false;
-        this.loadingPromise = null;
 
-        const d = data.pick(...indexIntoChunk);
-        this.data = d.data as Float32Array; // TODO
-        this.dataCache[chunkKey] = this.data;
-        resolve(this.data);
-      });
-    });
+      // Use zarrita's get method instead of callback-based loader
+      // zarr.get returns a Chunk with {data, shape, stride} and pick method
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
+      const data: any = await zarr.get(this.loader, chunk);
+      this.loading = false;
+      this.loadingPromise = null;
+
+      const d = data.pick(...indexIntoChunk);
+      this.data = d.data as Float32Array;
+      this.dataCache[chunkKey] = this.data;
+      return this.data;
+    })();
 
     return this.loadingPromise;
   }
