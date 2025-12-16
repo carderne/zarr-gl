@@ -37,7 +37,6 @@ const Index = () => {
         <MapLayer
           id="weather"
           source={SOURCE}
-          version="v2"
           variable={variable}
           selector={{ year }}
           colormap={colormap}

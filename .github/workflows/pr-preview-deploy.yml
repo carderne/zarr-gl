@@ -52,14 +52,29 @@ jobs:
           run-id: ${{ github.event.workflow_run.id }}
           path: dist/
       
-      - name: Deploy to GitHub Pages
-        uses: peaceiris/actions-gh-pages@v4
-        with:
-          github_token: ${{ secrets.GITHUB_TOKEN }}
-          publish_dir: ./dist
-          destination_dir: pr-${{ steps.pr.outputs.number }}
-          keep_files: true
-      
+      - name: Setup git config
+        run: |
+          git config --global user.name "github-actions[bot]"
+          git config --global user.email "github-actions[bot]@users.noreply.github.com"
+
+      - name: Clean and deploy PR preview
+        run: |
+          # Clone gh-pages branch
+          git clone --depth 1 --branch gh-pages https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/${{ github.repository }}.git gh-pages-repo
+          
+          # Remove old PR directory completely to clean up any stray files
+          rm -rf gh-pages-repo/pr-${{ steps.pr.outputs.number }}
+          
+          # Create fresh directory and copy new files
+          mkdir -p gh-pages-repo/pr-${{ steps.pr.outputs.number }}
+          cp -r dist/* gh-pages-repo/pr-${{ steps.pr.outputs.number }}/
+          
+          # Commit and push
+          cd gh-pages-repo
+          git add .
+          git commit -m "Update PR #${{ steps.pr.outputs.number }} preview" || echo "No changes to commit"
+          git push origin gh-pages
+
       - name: Get gh-pages commit SHA
         id: gh-pages-sha
         run: |
