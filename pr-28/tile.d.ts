@@ -1,10 +1,9 @@
 import { ChunkTuple } from "./utils";
-import type { Array, DataType } from "zarrita";
-export type Loader = Array<DataType>;
+import type { Array as ZarrArray, DataType } from "zarrita";
 interface TileProps {
     chunk: ChunkTuple;
     chunks: number[];
-    loader: Loader;
+    loader: ZarrArray<DataType>;
     dimensions: string[];
     shape: number[];
     dimArrs: Record<string, number[]>;
@@ -16,7 +15,7 @@ interface TileProps {
 declare class Tile {
     chunk: ChunkTuple;
     chunks: number[];
-    loader: Loader;
+    loader: ZarrArray<DataType>;
     dimensions: string[];
     shape: number[];
     dimArrs: Record<string, number[]>;

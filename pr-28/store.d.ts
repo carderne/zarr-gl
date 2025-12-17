@@ -1,3 +1,5 @@
+import type { Array as ZarrArray, DataType } from "zarrita";
+import * as zarr from "zarrita";
 export interface MultiscaleDataset {
     path: string;
     pixels_per_tile?: number;
@@ -14,9 +16,9 @@ export interface RequestParameters {
     credentials?: RequestCredentials;
 }
 declare const loadZarrVersion: (source: string, variable: string, transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>) => Promise<{
-    loaders: any;
+    loaders: Record<string, ZarrArray<DataType, zarr.Readable>>;
     dimensions: string[];
-    dimArrs: any;
+    dimArrs: Record<string, number[]>;
     levels: number[];
     maxZoom: number;
     tileSize: number;

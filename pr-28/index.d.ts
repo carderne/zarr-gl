@@ -1,7 +1,8 @@
 import type { Map } from "mapbox-gl";
 import { TileTuple } from "./utils";
-import Tile, { Loader } from "./tile";
+import Tile from "./tile";
 import type { RequestParameters } from "./store";
+import type { Array as ZarrArray, DataType } from "zarrita";
 type RGB = [number, number, number];
 export interface ZarrLayerProps {
     map: Map;
@@ -24,7 +25,6 @@ export declare class ZarrLayer {
     map: Map;
     id: string;
     zarrSource: string;
-    zarrVersion?: "v2" | "v3";
     variable: string;
     selector: Record<string, number>;
     invalidate: () => void;
@@ -35,7 +35,7 @@ export declare class ZarrLayer {
     vmax: number;
     opacity: number;
     minRenderZoom: number;
-    loaders: Record<string, Loader>;
+    loaders: Record<string, ZarrArray<DataType>>;
     tiles: Record<string, Tile>;
     maxZoom: number;
     fillValue: number;
