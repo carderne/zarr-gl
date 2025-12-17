@@ -1,12 +1,10 @@
 import { getChunks, mustCreateBuffer, mustCreateTexture, ChunkTuple } from "./utils";
-import type { Array, DataType } from "zarrita";
-
-export type Loader = Array<DataType>;
+import type { Array as ZarrArray, DataType } from "zarrita";
 
 interface TileProps {
   chunk: ChunkTuple;
   chunks: number[];
-  loader: Loader;
+  loader: ZarrArray<DataType>;
 
   dimensions: string[];
   shape: number[];
@@ -22,7 +20,7 @@ interface TileProps {
 class Tile {
   chunk: ChunkTuple;
   chunks: number[];
-  loader: Loader;
+  loader: ZarrArray<DataType>;
 
   dimensions: string[];
   shape: number[];
@@ -91,7 +89,10 @@ class Tile {
       this.loadingPromise = null;
 
       // TODO support other data types and slicing chunks
-      this.data = chunkData.data as unknown as Float32Array;
+      if (!(chunkData.data instanceof Float32Array)) {
+        throw new Error("zarr-gl only supports Float32Array chunk data");
+      }
+      this.data = chunkData.data;
       this.dataCache[chunkKey] = this.data;
       return this.data;
     })();

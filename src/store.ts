@@ -4,6 +4,7 @@
 // MIT License
 // Copyright (c) 2021 carbonplan
 
+import type { Array as ZarrArray, DataType } from "zarrita";
 import * as zarr from "zarrita";
 
 export interface MultiscaleDataset {
@@ -72,7 +73,7 @@ const getMetadataV2 = async (
   const arrayLocation = location.resolve(`${firstLevel}/${variable}`);
 
   const array = await zarr.open(arrayLocation, { kind: "array" });
-  const arrayAttrs = array.attrs as Record<string, unknown>;
+  const arrayAttrs = array.attrs;
   const dimensions = arrayAttrs._ARRAY_DIMENSIONS as string[];
 
   const metadataPath = arrayLocation.resolve(".zarray").path;
@@ -113,7 +114,7 @@ const loadLoaders = async (
   location: zarr.Location<zarr.FetchStore>,
   levels: number[],
   variable: string,
-) => {
+): Promise<Record<string, ZarrArray<DataType>>> => {
   return Object.fromEntries(
     await Promise.all(
       levels.map(async (level: number) => [
@@ -123,22 +124,26 @@ const loadLoaders = async (
         }),
       ]),
     ),
-  );
+  ) as Record<string, ZarrArray<DataType>>;
 };
 
 const loadDimensionArrays = async (
   location: zarr.Location<zarr.FetchStore>,
   dimensions: string[],
   firstLevel: number,
-) => {
+): Promise<Record<string, number[]>> => {
   return Object.fromEntries(
     await Promise.all(
       dimensions.map(async (dim) => {
         const dimArray = await zarr.open(location.resolve(`${firstLevel}/${dim}`), {
           kind: "array",
         });
-        const data = await zarr.get(dimArray);
-        return [dim, Array.from(data.data as Float32Array)];
+        const data = (await zarr.get(dimArray)).data;
+        if (!(data instanceof Float32Array)) {
+          throw new Error("zarr-gl only supports Float32Array dimension arrays");
+        }
+
+        return [dim, Array.from(data)];
       }),
     ),
   );
@@ -153,8 +158,7 @@ const loadZarrVersion = async (
   const store = await createStore(source);
 
   const grp = await zarr.open(store, { kind: "group" });
-  const rootAttrs = grp.attrs as Record<string, unknown>;
-  const multiscales = rootAttrs.multiscales as Multiscale[];
+  const multiscales = grp.attrs.multiscales as Multiscale[];
   const { levels, maxZoom, tileSize, crs } = getPyramidMetadata(multiscales);
 
   const firstLevel = levels[0]!;
@@ -191,8 +195,8 @@ const loadZarrVersion = async (
     maxZoom,
     tileSize,
     crs,
-    shape: shape as number[],
-    chunks: chunks as number[],
+    shape: shape,
+    chunks: chunks,
     fillValue,
   };
 };

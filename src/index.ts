@@ -15,13 +15,14 @@ import {
   mustCreateBuffer,
   ChunkTuple,
 } from "./utils";
-import Tile, { Loader } from "./tile";
+import Tile from "./tile";
 import zarrLoad from "./store";
 import fragmentSource from "./shaders/frag.glsl";
 import vertexSource from "./shaders/vert.glsl";
 import renderFragmentSource from "./shaders/renderFrag.glsl";
 import renderVertexSource from "./shaders/renderVert.glsl";
 import type { RequestParameters } from "./store";
+import type { Array as ZarrArray, DataType } from "zarrita";
 
 type RGB = [number, number, number];
 
@@ -52,7 +53,6 @@ export class ZarrLayer {
   map: Map;
   id: string;
   zarrSource: string;
-  zarrVersion?: "v2" | "v3";
   variable: string;
   selector: Record<string, number>;
   invalidate: () => void;
@@ -65,7 +65,7 @@ export class ZarrLayer {
   opacity: number;
   minRenderZoom: number;
 
-  loaders: Record<string, Loader>;
+  loaders: Record<string, ZarrArray<DataType>>;
   tiles: Record<string, Tile>;
   maxZoom: number;
   fillValue: number;
