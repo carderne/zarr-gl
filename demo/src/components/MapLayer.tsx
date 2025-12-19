@@ -13,7 +13,10 @@ interface MapLayerProps {
   source: string;
   variable: Variable;
   selector: Record<string, number>;
-  version: "v2" | "v3";
+  /**
+   * @deprecated The version field is deprecated. The loader now auto-detects the Zarr version.
+   */
+  version?: "v2" | "v3";
   colormap: RGB[];
   vmin: number;
   vmax: number;

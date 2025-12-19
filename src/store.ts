@@ -4,8 +4,18 @@
 // MIT License
 // Copyright (c) 2021 carbonplan
 
-import zarr from "zarr-js";
-import type { Loader, Metadata, Multiscale } from "zarr-js";
+import type { Array as ZarrArray, DataType } from "zarrita";
+import * as zarr from "zarrita";
+
+export interface MultiscaleDataset {
+  path: string;
+  pixels_per_tile?: number;
+  crs?: string;
+}
+
+export interface Multiscale {
+  datasets: MultiscaleDataset[];
+}
 
 export interface RequestParameters {
   url: string;
@@ -13,24 +23,22 @@ export interface RequestParameters {
   credentials?: RequestCredentials;
 }
 
-const createFetchFn = (
+const createFetchStore = (
   transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>,
-): typeof window.fetch => {
+) => {
   if (!transformRequest) {
-    return window.fetch;
+    return (url: string) => new zarr.FetchStore(url);
   }
 
-  return (async (input, init) => {
-    const url =
-      typeof input === "string" ? input : input instanceof Request ? input.url : input.toString();
+  return async (url: string) => {
     const requestParams = await transformRequest(url);
-
-    return window.fetch(requestParams.url, {
-      ...init,
-      headers: requestParams.headers,
-      credentials: requestParams.credentials,
+    return new zarr.FetchStore(requestParams.url, {
+      overrides: {
+        headers: requestParams.headers,
+        credentials: requestParams.credentials,
+      },
     });
-  }) as typeof window.fetch;
+  };
 };
 
 const getPyramidMetadata = (multiscales: Multiscale[]) => {
@@ -38,7 +46,12 @@ const getPyramidMetadata = (multiscales: Multiscale[]) => {
   if (!datasets) {
     throw new Error("No `multiscales` or `datasets` in zarr metadata");
   }
+
   const levels = datasets.map((dataset) => Number(dataset.path));
+  if (levels.length === 0) {
+    throw new Error("No levels found in multiscales metadata");
+  }
+
   const maxZoom = Math.max(...levels);
   const tileSize = datasets[0]?.pixels_per_tile;
   const crs = datasets[0]?.crs ?? "EPSG:3857";
@@ -48,151 +61,131 @@ const getPyramidMetadata = (multiscales: Multiscale[]) => {
   return { levels, maxZoom, tileSize, crs };
 };
 
-const loadZarrV2 = async (
-  source: string,
+// TODO: Migrate to get these data from zarrita to expose dimension_names and fill_value
+// and remove version specific code.
+// @see: https://github.com/manzt/zarrita.js/issues/281
+const getMetadataV2 = async (
+  store: zarr.FetchStore,
+  location: zarr.Location<zarr.FetchStore>,
   variable: string,
-  transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>,
-) => {
-  const fetchFn = createFetchFn(transformRequest);
+  firstLevel: number,
+): Promise<{ dimensions: string[]; fillValue: number }> => {
+  const arrayLocation = location.resolve(`${firstLevel}/${variable}`);
 
-  const [loaders, metadata] = await new Promise<[Record<string, Loader>, Metadata]>(
-    (resolve, reject) => {
-      zarr(fetchFn, "v2").openGroup(
-        source,
-        (err: Error, l: Record<string, Loader>, m: Metadata) => {
-          if (err) reject(err);
-          resolve([l, m]);
-        },
-      );
-    },
-  );
+  const array = await zarr.open(arrayLocation, { kind: "array" });
+  const arrayAttrs = array.attrs;
+  const dimensions = arrayAttrs._ARRAY_DIMENSIONS as string[];
 
-  const rootZattrs = metadata.metadata[".zattrs"];
-  if (!rootZattrs) {
-    throw new Error(`Failed to load .zattrs for ${source}`);
+  const metadataPath = arrayLocation.resolve(".zarray").path;
+  const metadataBytes = await store.get(metadataPath);
+  if (!metadataBytes) {
+    throw new Error(`Could not load metadata from ${metadataPath}`);
   }
-  const multiscales = rootZattrs.multiscales;
-  const datasets = multiscales[0]?.datasets;
-  if (!datasets) {
-    throw new Error(`Failed to load .zattrs for ${source}`);
-  }
-  const { levels, maxZoom, tileSize, crs } = getPyramidMetadata(multiscales);
-  const zarrayPath = `${levels[0]}/${variable}/.zarray`;
-  const zarray = metadata.metadata[zarrayPath];
-  if (!zarray) {
-    throw new Error(`Failed to load .zarray for ${source} and ${zarrayPath}`);
-  }
-  const shape = zarray.shape;
-  const chunks = zarray.chunks;
-  const fillValue = zarray.fill_value;
-
-  const zattrsPath = `${levels[0]}/${variable}/.zattrs`;
-  const zattrs = metadata.metadata[zattrsPath];
-  if (!zattrs) {
-    throw new Error(`Failed to load .zattrs for ${source} and ${zarrayPath}`);
-  }
-  const dimensions = zattrs._ARRAY_DIMENSIONS;
-
-  const dimArrs = Object.fromEntries(
-    await Promise.all(
-      dimensions.map(
-        (dim) =>
-          new Promise<[string, number[]]>((resolve, reject) => {
-            const loader = loaders[`${levels[0]}/${dim}`];
-            if (!loader || typeof loader === "undefined") {
-              reject(`No loader for dimension ${dim}`);
-              return;
-            }
-            loader([0], (err, chunk) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              resolve([dim, Array.from(chunk.data as Float32Array)]);
-            });
-          }),
-      ),
-    ),
-  );
-
-  return {
-    loaders,
-    dimensions,
-    dimArrs,
-    levels,
-    maxZoom,
-    tileSize,
-    crs,
-    shape,
-    chunks,
-    fillValue,
+  const metadata = JSON.parse(new TextDecoder().decode(metadataBytes)) as {
+    fill_value?: number;
   };
+  const fillValue = metadata.fill_value ?? 0;
+
+  return { dimensions, fillValue };
 };
 
-const loadZarrV3 = async (
+const getMetadataV3 = async (
+  store: zarr.FetchStore,
+  location: zarr.Location<zarr.FetchStore>,
+  variable: string,
+  firstLevel: number,
+): Promise<{ dimensions: string[]; fillValue: number }> => {
+  const arrayLocation = location.resolve(`${firstLevel}/${variable}`);
+  const metadataPath = arrayLocation.resolve("zarr.json").path;
+  const metadataBytes = await store.get(metadataPath);
+  if (!metadataBytes) {
+    throw new Error(`Could not load metadata from ${metadataPath}`);
+  }
+  const metadata = JSON.parse(new TextDecoder().decode(metadataBytes)) as {
+    dimension_names?: string[];
+    fill_value?: number;
+  };
+  const dimensions = metadata.dimension_names ?? [];
+  const fillValue = metadata.fill_value ?? 0;
+  return { dimensions, fillValue };
+};
+
+const loadLoaders = async (
+  location: zarr.Location<zarr.FetchStore>,
+  levels: number[],
+  variable: string,
+): Promise<Record<string, ZarrArray<DataType>>> => {
+  return Object.fromEntries(
+    await Promise.all(
+      levels.map(async (level: number) => [
+        `${level}/${variable}`,
+        await zarr.open(location.resolve(`${level}/${variable}`), {
+          kind: "array",
+        }),
+      ]),
+    ),
+  ) as Record<string, ZarrArray<DataType>>;
+};
+
+const loadDimensionArrays = async (
+  location: zarr.Location<zarr.FetchStore>,
+  dimensions: string[],
+  firstLevel: number,
+): Promise<Record<string, number[]>> => {
+  return Object.fromEntries(
+    await Promise.all(
+      dimensions.map(async (dim) => {
+        const dimArray = await zarr.open(location.resolve(`${firstLevel}/${dim}`), {
+          kind: "array",
+        });
+        const data = (await zarr.get(dimArray)).data;
+        if (!(data instanceof Float32Array)) {
+          throw new Error("zarr-gl only supports Float32Array dimension arrays");
+        }
+
+        return [dim, Array.from(data)];
+      }),
+    ),
+  );
+};
+
+const loadZarrVersion = async (
   source: string,
   variable: string,
   transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>,
 ) => {
-  const fetchFn = createFetchFn(transformRequest);
+  const createStore = createFetchStore(transformRequest);
+  const store = await createStore(source);
 
-  const metadata = await fetchFn(`${source}/zarr.json`).then((res) => res.json());
-  const { levels, maxZoom, tileSize, crs } = getPyramidMetadata(metadata.attributes.multiscales);
+  const grp = await zarr.open(store, { kind: "group" });
+  const multiscales = grp.attrs.multiscales as Multiscale[];
+  const { levels, maxZoom, tileSize, crs } = getPyramidMetadata(multiscales);
 
-  const arrayMetadata = await fetchFn(`${source}/${levels[0]}/${variable}/zarr.json`).then((res) =>
-    res.json(),
-  );
+  const firstLevel = levels[0]!;
+  const location = zarr.root(store);
 
-  const dimensions = arrayMetadata.attributes._ARRAY_DIMENSIONS as string[];
-  const shape = arrayMetadata.shape;
-  const isSharded = arrayMetadata.codecs[0].name == "sharding_indexed";
-  const chunks = isSharded
-    ? arrayMetadata.codecs[0].configuration.chunk_shape
-    : arrayMetadata.chunk_grid.configuration.chunk_shape;
-  const fillValue = arrayMetadata.fill_value;
+  // Try v2 first, fall back to v3 if it fails
+  let dimensions: string[];
+  let fillValue: number;
+  try {
+    const metadata = await getMetadataV2(store, location, variable, firstLevel);
+    dimensions = metadata.dimensions;
+    fillValue = metadata.fillValue;
+  } catch {
+    const metadata = await getMetadataV3(store, location, variable, firstLevel);
+    dimensions = metadata.dimensions;
+    fillValue = metadata.fillValue;
+  }
 
-  const loaders = Object.fromEntries(
-    await Promise.all(
-      levels.map(
-        (level) =>
-          new Promise<[string, Loader]>((resolve, reject) => {
-            zarr(fetchFn, "v3").open(
-              `${source}/${level}/${variable}`,
-              (err: Error, get: Loader) => {
-                if (err) {
-                  reject(err);
-                  return;
-                }
-                resolve([`${level}/${variable}`, get]);
-              },
-            );
-          }),
-      ),
-    ),
-  );
+  const array = await zarr.open(location.resolve(`${firstLevel}/${variable}`), {
+    kind: "array",
+  });
 
-  const dimArrs = Object.fromEntries(
-    await Promise.all(
-      dimensions.map(
-        (dim) =>
-          new Promise<[string, number[]]>((resolve, reject) => {
-            zarr(fetchFn, "v3").open(`${source}/${levels[0]}/${dim}`, (err: Error, get: Loader) => {
-              if (err) {
-                reject(err);
-                return;
-              }
-              get([0], (err, chunk) => {
-                if (err) {
-                  reject(err);
-                  return;
-                }
-                resolve([dim, Array.from(chunk.data as Float32Array)]);
-              });
-            });
-          }),
-      ),
-    ),
-  );
+  const shape = array.shape;
+  const chunks = array.chunks;
+
+  const loaders = await loadLoaders(location, levels, variable);
+  const dimArrs = await loadDimensionArrays(location, dimensions, firstLevel);
 
   return {
     loaders,
@@ -202,23 +195,18 @@ const loadZarrV3 = async (
     maxZoom,
     tileSize,
     crs,
-    shape: shape as number[],
-    chunks: chunks as number[],
-    fillValue: fillValue as number,
+    shape: shape,
+    chunks: chunks,
+    fillValue,
   };
 };
 
 const loadZarr = async (
   source: string,
   variable: string,
-  version: "v2" | "v3",
   transformRequest?: (url: string) => RequestParameters | Promise<RequestParameters>,
-): ReturnType<typeof loadZarrV2> => {
-  const res =
-    version === "v2"
-      ? loadZarrV2(source, variable, transformRequest)
-      : loadZarrV3(source, variable, transformRequest);
-  return res;
+): ReturnType<typeof loadZarrVersion> => {
+  return loadZarrVersion(source, variable, transformRequest);
 };
 
 export default loadZarr;

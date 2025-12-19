@@ -1,11 +1,10 @@
-import type { ChunkTuple, Loader } from "zarr-js";
-import { getChunks, mustCreateBuffer, mustCreateTexture } from "./utils";
-import type { NdArray } from "ndarray";
+import { getChunks, mustCreateBuffer, mustCreateTexture, ChunkTuple } from "./utils";
+import type { Array as ZarrArray, DataType } from "zarrita";
 
 interface TileProps {
   chunk: ChunkTuple;
   chunks: number[];
-  loader: Loader;
+  loader: ZarrArray<DataType>;
 
   dimensions: string[];
   shape: number[];
@@ -21,7 +20,7 @@ interface TileProps {
 class Tile {
   chunk: ChunkTuple;
   chunks: number[];
-  loader: Loader;
+  loader: ZarrArray<DataType>;
 
   dimensions: string[];
   shape: number[];
@@ -82,31 +81,21 @@ class Tile {
       return this.loadingPromise;
     }
 
-    this.loadingPromise = new Promise<Float32Array>((resolve) => {
+    this.loadingPromise = (async () => {
       this.loading = true;
-      const indexIntoChunk = this.dimensions.map((d) => {
-        if (["x", "y"].includes(d)) {
-          return null;
-        } else if (selector[d] === undefined) {
-          return null;
-        } else {
-          const idx = this.dimArrs[d]?.findIndex((coordinate) => coordinate === selector[d]);
-          if (typeof idx === "undefined") {
-            throw new Error("Couldnt extract indices from dimArrs");
-          }
-          return idx;
-        }
-      });
-      this.loader(chunk, (_: Error, data: NdArray) => {
-        this.loading = false;
-        this.loadingPromise = null;
 
-        const d = data.pick(...indexIntoChunk);
-        this.data = d.data as Float32Array; // TODO
-        this.dataCache[chunkKey] = this.data;
-        resolve(this.data);
-      });
-    });
+      const chunkData = await this.loader.getChunk(chunk);
+      this.loading = false;
+      this.loadingPromise = null;
+
+      // TODO support other data types and slicing chunks
+      if (!(chunkData.data instanceof Float32Array)) {
+        throw new Error("zarr-gl only supports Float32Array chunk data");
+      }
+      this.data = chunkData.data;
+      this.dataCache[chunkKey] = this.data;
+      return this.data;
+    })();
 
     return this.loadingPromise;
   }

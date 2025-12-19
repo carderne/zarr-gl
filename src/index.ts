@@ -13,8 +13,8 @@ import {
   mustCreateTexture,
   mustCreateFramebuffer,
   mustCreateBuffer,
+  ChunkTuple,
 } from "./utils";
-import type { ChunkTuple, Loader } from "zarr-js";
 import Tile from "./tile";
 import zarrLoad from "./store";
 import fragmentSource from "./shaders/frag.glsl";
@@ -22,6 +22,7 @@ import vertexSource from "./shaders/vert.glsl";
 import renderFragmentSource from "./shaders/renderFrag.glsl";
 import renderVertexSource from "./shaders/renderVert.glsl";
 import type { RequestParameters } from "./store";
+import type { Array as ZarrArray, DataType } from "zarrita";
 
 type RGB = [number, number, number];
 
@@ -29,7 +30,11 @@ export interface ZarrLayerProps {
   map: Map;
   id: string; // id for the layer, must be unique
   source: string; // Zarr source URL
-  version: "v2" | "v3"; // Zarr version
+  /**
+   * @deprecated The version field is deprecated and will be removed in a future version.
+   * The loader now automatically detects the Zarr version by trying v2 first, then falling back to v3.
+   */
+  version?: "v2" | "v3";
   variable: string; // Zarr variable to display
   selector: Record<string, number>; // index into dimensions
   colormap: RGB[]; // array of RGB triplets in 0-255
@@ -48,7 +53,6 @@ export class ZarrLayer {
   map: Map;
   id: string;
   zarrSource: string;
-  zarrVersion: "v2" | "v3";
   variable: string;
   selector: Record<string, number>;
   invalidate: () => void;
@@ -61,7 +65,7 @@ export class ZarrLayer {
   opacity: number;
   minRenderZoom: number;
 
-  loaders: Record<string, Loader>;
+  loaders: Record<string, ZarrArray<DataType>>;
   tiles: Record<string, Tile>;
   maxZoom: number;
   fillValue: number;
@@ -128,7 +132,6 @@ export class ZarrLayer {
 
     this.id = id;
     this.zarrSource = source;
-    this.zarrVersion = version;
     this.variable = variable;
     this.selector = selector ?? {};
 
@@ -153,6 +156,12 @@ export class ZarrLayer {
     this.isUpdating = false;
     this.canvasWidth = 512; // Default size, will be updated
     this.canvasHeight = 512;
+
+    if (version) {
+      console.warn(
+        "zarr-gl: The version field is deprecated and will be removed in a future version.",
+      );
+    }
   }
 
   setOpacity(opacity: number) {
@@ -210,8 +219,7 @@ export class ZarrLayer {
     if (!bounds) {
       throw new Error("Couldn't get map bounds");
     }
-    const tiles = getTilesAtZoom(zoom, bounds);
-    return tiles;
+    return getTilesAtZoom(zoom, bounds);
   }
 
   async prepareTiles() {
@@ -220,7 +228,7 @@ export class ZarrLayer {
     }
     const gl = this.gl;
     const { loaders, dimensions, dimArrs, levels, maxZoom, shape, chunks, fillValue } =
-      await zarrLoad(this.zarrSource, this.variable, this.zarrVersion, this.transformRequest);
+      await zarrLoad(this.zarrSource, this.variable, this.transformRequest);
 
     // TODO check if selector references non-existent dimensions
 
