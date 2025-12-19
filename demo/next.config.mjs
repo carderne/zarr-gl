@@ -9,6 +9,12 @@ const nextConfig = {
       test: /\.glsl/,
       type: "asset/source",
     });
+    // Ignore .d.ts files in the parent zarr-gl dist directory
+    // These get picked up by webpack's context module from dynamic imports
+    config.module.rules.unshift({
+      test: /\.d\.ts$/,
+      type: "asset/source",
+    });
     return config;
   },
 };

@@ -28,12 +28,12 @@ jobs:
           node-version: '22.x'
           registry-url: 'https://registry.npmjs.org'
       - run: npm install -g npm@10
-      - run: |
-          npm ci
-          npm run build
-          cd demo
-          npm ci
-          npm run build
+      - run: npm ci
+      - run: npm run build
+      - run: npm ci
+        working-directory: demo
+      - run: npm run build
+        working-directory: demo
       - uses: actions/upload-pages-artifact@v3
         with:
           path: 'demo/out'
