@@ -88,11 +88,22 @@ class Tile {
       this.loading = false;
       this.loadingPromise = null;
 
-      // TODO support other data types and slicing chunks
-      if (!(chunkData.data instanceof Float32Array)) {
-        throw new Error("zarr-gl only supports Float32Array chunk data");
+      const d = chunkData.data;
+      if (d instanceof Float32Array) {
+        this.data = d;
+      } else if (
+        d instanceof Int32Array ||
+        d instanceof Int16Array ||
+        d instanceof Uint32Array ||
+        d instanceof Int8Array ||
+        d instanceof Uint32Array ||
+        d instanceof Uint8Array
+      ) {
+        this.data = new Float32Array(d.map((x) => x));
+      } else {
+        const dtype = d.constructor.name;
+        throw new Error(`zarr-gl does not support dtype: ${dtype}`);
       }
-      this.data = chunkData.data;
       this.dataCache[chunkKey] = this.data;
       return this.data;
     })();

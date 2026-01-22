@@ -139,10 +139,6 @@ const loadDimensionArrays = async (
           kind: "array",
         });
         const data = (await zarr.get(dimArray)).data;
-        if (!(data instanceof Float32Array)) {
-          throw new Error("zarr-gl only supports Float32Array dimension arrays");
-        }
-
         return [dim, Array.from(data)];
       }),
     ),
