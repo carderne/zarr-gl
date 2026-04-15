@@ -1,5 +1,7 @@
 # zarr-gl
 
+**NB: you should use [carbonplan/zarr-layer](https://github.com/carbonplan/zarr-layer) instead. It has effectively superseded this library.**
+
 Custom WebGL Zarr layer for Mapbox and Maplibre.
 
 This library allows you to load [Zarr](https://zarr.dev/) data into a [Mapbox GL JS](https://docs.mapbox.com/mapbox-gl-js/guides/) or [Maplibre GL JS](https://maplibre.org/maplibre-gl-js/docs/) map.
